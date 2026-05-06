@@ -129,13 +129,14 @@ db.dbReady.then(() => {
 const SMTP_API_BASE = 'https://api.smtp.dev';
 const SMTP_API_KEY = config.SMTPLABS_API_KEY;
 
-// Helper: Extract OTP from text
-function extractOTP(text) {
+// Helper: Extract OTP from text — uses centralized robust extractor
+const { extractOTP: _robustExtractOTP } = require('./services/otp-extractor');
+function extractOTP(text, subject = '') {
     if (!text) return null;
-    // Look for 4-8 digit codes
-    const otpMatch = text.match(/\b\d{4,8}\b/);
-    return otpMatch ? otpMatch[0] : null;
+    const result = _robustExtractOTP(text, subject);
+    return result ? result.otp : null;
 }
+
 
 // Create a new email account via API Gateway (Generic Email Provider)
 async function fetchSmtpLabsEmail() {
@@ -217,7 +218,8 @@ async function getSmtpLabsOtp(email, accountId = null, mailboxId = null, provide
             const body = fullMsg.body?.text || '';
             const subject = fullMsg.subject || latestMsg.subject || '';
             const textContent = `${subject} ${body}`;
-            const otp = extractOTP(textContent);
+            const otp = extractOTP(body, subject);
+
 
             return {
                 otp: otp,

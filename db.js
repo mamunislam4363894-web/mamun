@@ -369,7 +369,7 @@ function decrypt(text) {
 }
 
 
-const firebaseManager = require('./database/firebase-manager');
+const firebaseManager = require('./firebase-manager');
 
 class Database {
     constructor() {
