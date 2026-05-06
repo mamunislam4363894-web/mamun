@@ -1977,7 +1977,110 @@
                     </div>
                 </div>
 
+                <!-- ===================== LIVE SECTION ===================== -->
+                <div style="padding: 0 16px; margin-top: 8px; margin-bottom: 4px;">
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+                        <div style="width:8px; height:8px; background:#ef4444; border-radius:50%; animation: livePulse 1.2s ease-in-out infinite; box-shadow: 0 0 0 0 rgba(239,68,68,0.7);"></div>
+                        <div style="font-size:13px; font-weight:900; color:#ef4444; letter-spacing:2px; text-transform:uppercase;">LIVE</div>
+                        <div style="flex:1; height:1px; background: linear-gradient(90deg, rgba(239,68,68,0.3), transparent);"></div>
+                    </div>
+
+                    <!-- Live Row 1: 2FA, Instagram, Facebook -->
+                    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:10px;">
+
+                        <!-- 2FA Card -->
+                        <div id="liveCard2fa" onclick="nav('live2fa')"
+                            style="background:var(--bg-card); border:1px solid rgba(99,102,241,0.35); border-radius:18px; padding:14px 8px 12px; display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer; position:relative; overflow:hidden; transition:transform 0.15s;"
+                            onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
+                            <div style="position:absolute; top:7px; right:8px; display:flex; align-items:center; gap:3px;">
+                                <div style="width:6px; height:6px; background:#ef4444; border-radius:50%; animation:livePulse 1.2s infinite;"></div>
+                                <span style="font-size:8px; font-weight:800; color:#ef4444; letter-spacing:1px;">LIVE</span>
+                            </div>
+                            <div style="width:46px; height:46px; background:linear-gradient(135deg,#4f46e5,#7c3aed); border-radius:14px; display:flex; align-items:center; justify-content:center; box-shadow:0 6px 18px rgba(79,70,229,0.4);">
+                                <i class="fas fa-shield-alt" style="font-size:20px; color:#fff;"></i>
+                            </div>
+                            <div style="font-size:10px; font-weight:800; color:var(--text-main); text-align:center; line-height:1.2; text-transform:uppercase;">2FA</div>
+                        </div>
+
+                        <!-- Instagram Card -->
+                        <div id="liveCardInsta" onclick="nav('liveInstagram')"
+                            style="background:var(--bg-card); border:1px solid rgba(236,72,153,0.35); border-radius:18px; padding:14px 8px 12px; display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer; position:relative; overflow:hidden; transition:transform 0.15s;"
+                            onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
+                            <div style="position:absolute; top:7px; right:8px; display:flex; align-items:center; gap:3px;">
+                                <div style="width:6px; height:6px; background:#ef4444; border-radius:50%; animation:livePulse 1.2s infinite;"></div>
+                                <span style="font-size:8px; font-weight:800; color:#ef4444; letter-spacing:1px;">LIVE</span>
+                            </div>
+                            <div style="width:46px; height:46px; background:linear-gradient(135deg,#f97316,#ec4899,#8b5cf6); border-radius:14px; display:flex; align-items:center; justify-content:center; box-shadow:0 6px 18px rgba(236,72,153,0.4);">
+                                <i class="fab fa-instagram" style="font-size:22px; color:#fff;"></i>
+                            </div>
+                            <div style="font-size:10px; font-weight:800; color:var(--text-main); text-align:center; line-height:1.2; text-transform:uppercase;">Instagram</div>
+                        </div>
+
+                        <!-- Facebook Card -->
+                        <div id="liveCardFacebook" onclick="nav('liveFacebook')"
+                            style="background:var(--bg-card); border:1px solid rgba(29,78,216,0.35); border-radius:18px; padding:14px 8px 12px; display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer; position:relative; overflow:hidden; transition:transform 0.15s;"
+                            onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
+                            <div style="position:absolute; top:7px; right:8px; display:flex; align-items:center; gap:3px;">
+                                <div style="width:6px; height:6px; background:#ef4444; border-radius:50%; animation:livePulse 1.2s infinite;"></div>
+                                <span style="font-size:8px; font-weight:800; color:#ef4444; letter-spacing:1px;">LIVE</span>
+                            </div>
+                            <div style="width:46px; height:46px; background:linear-gradient(135deg,#1d4ed8,#3b82f6); border-radius:14px; display:flex; align-items:center; justify-content:center; box-shadow:0 6px 18px rgba(29,78,216,0.4);">
+                                <i class="fab fa-facebook-f" style="font-size:22px; color:#fff;"></i>
+                            </div>
+                            <div style="font-size:10px; font-weight:800; color:var(--text-main); text-align:center; line-height:1.2; text-transform:uppercase;">Facebook</div>
+                        </div>
+                    </div>
+
+                    <!-- Live Row 2: TikTok, Twitter, Threads -->
+                    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px;">
+
+                        <!-- TikTok Card -->
+                        <div id="liveCardTiktok" onclick="nav('liveTiktok')"
+                            style="background:var(--bg-card); border:1px solid rgba(20,20,20,0.5); border-radius:18px; padding:14px 8px 12px; display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer; position:relative; overflow:hidden; transition:transform 0.15s;"
+                            onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
+                            <div style="position:absolute; top:7px; right:8px; display:flex; align-items:center; gap:3px;">
+                                <div style="width:6px; height:6px; background:#ef4444; border-radius:50%; animation:livePulse 1.2s infinite;"></div>
+                                <span style="font-size:8px; font-weight:800; color:#ef4444; letter-spacing:1px;">LIVE</span>
+                            </div>
+                            <div style="width:46px; height:46px; background:linear-gradient(135deg,#010101,#69c9d0); border-radius:14px; display:flex; align-items:center; justify-content:center; box-shadow:0 6px 18px rgba(105,201,208,0.3);">
+                                <i class="fab fa-tiktok" style="font-size:20px; color:#fff;"></i>
+                            </div>
+                            <div style="font-size:10px; font-weight:800; color:var(--text-main); text-align:center; line-height:1.2; text-transform:uppercase;">TikTok</div>
+                        </div>
+
+                        <!-- Twitter/X Card -->
+                        <div id="liveCardTwitter" onclick="nav('liveTwitter')"
+                            style="background:var(--bg-card); border:1px solid rgba(29,161,242,0.35); border-radius:18px; padding:14px 8px 12px; display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer; position:relative; overflow:hidden; transition:transform 0.15s;"
+                            onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
+                            <div style="position:absolute; top:7px; right:8px; display:flex; align-items:center; gap:3px;">
+                                <div style="width:6px; height:6px; background:#ef4444; border-radius:50%; animation:livePulse 1.2s infinite;"></div>
+                                <span style="font-size:8px; font-weight:800; color:#ef4444; letter-spacing:1px;">LIVE</span>
+                            </div>
+                            <div style="width:46px; height:46px; background:linear-gradient(135deg,#000000,#1d9bf0); border-radius:14px; display:flex; align-items:center; justify-content:center; box-shadow:0 6px 18px rgba(29,155,240,0.3);">
+                                <i class="fab fa-x-twitter" style="font-size:20px; color:#fff;"></i>
+                            </div>
+                            <div style="font-size:10px; font-weight:800; color:var(--text-main); text-align:center; line-height:1.2; text-transform:uppercase;">Twitter</div>
+                        </div>
+
+                        <!-- Threads Card -->
+                        <div id="liveCardThreads" onclick="nav('liveThreads')"
+                            style="background:var(--bg-card); border:1px solid rgba(20,20,20,0.5); border-radius:18px; padding:14px 8px 12px; display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer; position:relative; overflow:hidden; transition:transform 0.15s;"
+                            onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
+                            <div style="position:absolute; top:7px; right:8px; display:flex; align-items:center; gap:3px;">
+                                <div style="width:6px; height:6px; background:#ef4444; border-radius:50%; animation:livePulse 1.2s infinite;"></div>
+                                <span style="font-size:8px; font-weight:800; color:#ef4444; letter-spacing:1px;">LIVE</span>
+                            </div>
+                            <div style="width:46px; height:46px; background:linear-gradient(135deg,#1a1a1a,#333333); border-radius:14px; display:flex; align-items:center; justify-content:center; box-shadow:0 6px 18px rgba(0,0,0,0.4);">
+                                <i class="fab fa-threads" style="font-size:20px; color:#fff;"></i>
+                            </div>
+                            <div style="font-size:10px; font-weight:800; color:var(--text-main); text-align:center; line-height:1.2; text-transform:uppercase;">Threads</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- ===================== END LIVE SECTION ===================== -->
+
                 <!-- Redeem Banner -->
+
                 <div class="redeem-banner-home" onclick="nav('redeem')">
                     <div class="redeem-left">
                         <div class="redeem-icon"><i class="fas fa-ticket-alt"></i></div>
@@ -2001,6 +2104,178 @@
                         <i class="fas fa-history"
                             style="font-size:24px; opacity:0.3; display:block; margin-bottom:10px;"></i>
                         <div style="font-size:13px;">No recent activity</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ====== 2FA LIVE PAGE ====== -->
+            <div id="live2faPage" class="page">
+                <div class="content-body" style="padding:20px; padding-bottom:120px;">
+                    <!-- Header Card -->
+                    <div style="background:linear-gradient(135deg,#4f46e5,#7c3aed); border-radius:22px; padding:22px; margin-bottom:20px; position:relative; overflow:hidden; box-shadow:0 10px 30px rgba(79,70,229,0.35);">
+                        <div style="position:absolute;top:-20px;right:-20px;width:90px;height:90px;background:rgba(255,255,255,0.08);border-radius:50%;"></div>
+                        <div style="display:flex;align-items:center;gap:14px;position:relative;z-index:1;">
+                            <div style="width:52px;height:52px;background:rgba(255,255,255,0.15);border-radius:16px;display:flex;align-items:center;justify-content:center;">
+                                <i class="fas fa-shield-alt" style="font-size:24px;color:#fff;"></i>
+                            </div>
+                            <div>
+                                <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1px;">Live Service</div>
+                                <div style="font-size:22px;font-weight:900;color:#fff;">2FA Live</div>
+                            </div>
+                            <div style="margin-left:auto;display:flex;align-items:center;gap:5px;background:rgba(239,68,68,0.25);padding:5px 10px;border-radius:20px;border:1px solid rgba(239,68,68,0.5);">
+                                <div style="width:7px;height:7px;background:#ef4444;border-radius:50%;animation:livePulse 1.2s infinite;"></div>
+                                <span style="font-size:10px;font-weight:800;color:#ef4444;letter-spacing:1px;">LIVE</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Input Box -->
+                    <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:18px;padding:18px;margin-bottom:14px;">
+                        <div style="font-size:11px;font-weight:700;color:var(--text-sub);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">
+                            <i class="fas fa-link" style="margin-right:6px;color:#7c3aed;"></i>Account / Secret Key
+                        </div>
+                        <input id="twofa-input" type="text" placeholder="Enter 2FA secret key or account..."
+                            style="width:100%;background:rgba(0,0,0,0.2);border:1px solid rgba(124,58,237,0.3);border-radius:12px;padding:12px 16px;color:var(--text-main);font-size:14px;outline:none;box-sizing:border-box;">
+                    </div>
+
+                    <!-- Result Box -->
+                    <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:18px;padding:18px;margin-bottom:18px;min-height:80px;">
+                        <div style="font-size:11px;font-weight:700;color:var(--text-sub);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">
+                            <i class="fas fa-key" style="margin-right:6px;color:#7c3aed;"></i>Live OTP Code
+                        </div>
+                        <div id="twofa-result" style="font-size:34px;font-weight:900;color:#7c3aed;text-align:center;letter-spacing:8px;padding:10px 0;">
+                            ------
+                        </div>
+                        <div id="twofa-timer" style="text-align:center;font-size:11px;color:var(--text-sub);margin-top:4px;">Waiting...</div>
+                    </div>
+
+                    <!-- START & RESTART Buttons -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                        <button id="twofa-start-btn" onclick="start2faLive()"
+                            style="height:50px;background:linear-gradient(135deg,#4f46e5,#7c3aed);border:none;border-radius:16px;color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;box-shadow:0 6px 20px rgba(79,70,229,0.35);transition:opacity 0.2s;"
+                            onmousedown="this.style.opacity='0.8'" onmouseup="this.style.opacity='1'">
+                            <i class="fas fa-play"></i> START
+                        </button>
+                        <button id="twofa-restart-btn" onclick="restart2faLive()"
+                            style="height:50px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.35);border-radius:16px;color:#a78bfa;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:opacity 0.2s;"
+                            onmousedown="this.style.opacity='0.7'" onmouseup="this.style.opacity='1'">
+                            <i class="fas fa-redo"></i> RESTART
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ====== INSTAGRAM LIVE PAGE ====== -->
+            <div id="liveInstagramPage" class="page">
+                <div class="content-body" style="padding:20px;padding-bottom:120px;">
+                    <div style="background:linear-gradient(135deg,#f97316,#ec4899,#8b5cf6);border-radius:22px;padding:22px;margin-bottom:20px;box-shadow:0 10px 30px rgba(236,72,153,0.35);">
+                        <div style="display:flex;align-items:center;gap:14px;">
+                            <div style="width:52px;height:52px;background:rgba(255,255,255,0.15);border-radius:16px;display:flex;align-items:center;justify-content:center;">
+                                <i class="fab fa-instagram" style="font-size:26px;color:#fff;"></i>
+                            </div>
+                            <div><div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1px;">Live Service</div><div style="font-size:22px;font-weight:900;color:#fff;">Instagram Live</div></div>
+                            <div style="margin-left:auto;display:flex;align-items:center;gap:5px;background:rgba(239,68,68,0.25);padding:5px 10px;border-radius:20px;border:1px solid rgba(239,68,68,0.5);">
+                                <div style="width:7px;height:7px;background:#ef4444;border-radius:50%;animation:livePulse 1.2s infinite;"></div>
+                                <span style="font-size:10px;font-weight:800;color:#ef4444;letter-spacing:1px;">LIVE</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:18px;padding:20px;text-align:center;">
+                        <i class="fab fa-instagram" style="font-size:48px;background:linear-gradient(135deg,#f97316,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px;display:block;"></i>
+                        <div style="font-size:15px;font-weight:700;color:var(--text-main);margin-bottom:6px;">Instagram Live Checker</div>
+                        <div style="font-size:12px;color:var(--text-sub);">Coming soon — live account verification</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ====== FACEBOOK LIVE PAGE ====== -->
+            <div id="liveFacebookPage" class="page">
+                <div class="content-body" style="padding:20px;padding-bottom:120px;">
+                    <div style="background:linear-gradient(135deg,#1d4ed8,#3b82f6);border-radius:22px;padding:22px;margin-bottom:20px;box-shadow:0 10px 30px rgba(29,78,216,0.35);">
+                        <div style="display:flex;align-items:center;gap:14px;">
+                            <div style="width:52px;height:52px;background:rgba(255,255,255,0.15);border-radius:16px;display:flex;align-items:center;justify-content:center;">
+                                <i class="fab fa-facebook-f" style="font-size:26px;color:#fff;"></i>
+                            </div>
+                            <div><div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1px;">Live Service</div><div style="font-size:22px;font-weight:900;color:#fff;">Facebook Live</div></div>
+                            <div style="margin-left:auto;display:flex;align-items:center;gap:5px;background:rgba(239,68,68,0.25);padding:5px 10px;border-radius:20px;border:1px solid rgba(239,68,68,0.5);">
+                                <div style="width:7px;height:7px;background:#ef4444;border-radius:50%;animation:livePulse 1.2s infinite;"></div>
+                                <span style="font-size:10px;font-weight:800;color:#ef4444;letter-spacing:1px;">LIVE</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:18px;padding:20px;text-align:center;">
+                        <i class="fab fa-facebook-f" style="font-size:48px;color:#3b82f6;margin-bottom:12px;display:block;"></i>
+                        <div style="font-size:15px;font-weight:700;color:var(--text-main);margin-bottom:6px;">Facebook Live Checker</div>
+                        <div style="font-size:12px;color:var(--text-sub);">Coming soon — live account verification</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ====== TIKTOK LIVE PAGE ====== -->
+            <div id="liveTiktokPage" class="page">
+                <div class="content-body" style="padding:20px;padding-bottom:120px;">
+                    <div style="background:linear-gradient(135deg,#010101,#69c9d0);border-radius:22px;padding:22px;margin-bottom:20px;box-shadow:0 10px 30px rgba(105,201,208,0.25);">
+                        <div style="display:flex;align-items:center;gap:14px;">
+                            <div style="width:52px;height:52px;background:rgba(255,255,255,0.15);border-radius:16px;display:flex;align-items:center;justify-content:center;">
+                                <i class="fab fa-tiktok" style="font-size:24px;color:#fff;"></i>
+                            </div>
+                            <div><div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1px;">Live Service</div><div style="font-size:22px;font-weight:900;color:#fff;">TikTok Live</div></div>
+                            <div style="margin-left:auto;display:flex;align-items:center;gap:5px;background:rgba(239,68,68,0.25);padding:5px 10px;border-radius:20px;border:1px solid rgba(239,68,68,0.5);">
+                                <div style="width:7px;height:7px;background:#ef4444;border-radius:50%;animation:livePulse 1.2s infinite;"></div>
+                                <span style="font-size:10px;font-weight:800;color:#ef4444;letter-spacing:1px;">LIVE</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:18px;padding:20px;text-align:center;">
+                        <i class="fab fa-tiktok" style="font-size:48px;color:#69c9d0;margin-bottom:12px;display:block;"></i>
+                        <div style="font-size:15px;font-weight:700;color:var(--text-main);margin-bottom:6px;">TikTok Live Checker</div>
+                        <div style="font-size:12px;color:var(--text-sub);">Coming soon — live account verification</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ====== TWITTER LIVE PAGE ====== -->
+            <div id="liveTwitterPage" class="page">
+                <div class="content-body" style="padding:20px;padding-bottom:120px;">
+                    <div style="background:linear-gradient(135deg,#000000,#1d9bf0);border-radius:22px;padding:22px;margin-bottom:20px;box-shadow:0 10px 30px rgba(29,155,240,0.25);">
+                        <div style="display:flex;align-items:center;gap:14px;">
+                            <div style="width:52px;height:52px;background:rgba(255,255,255,0.15);border-radius:16px;display:flex;align-items:center;justify-content:center;">
+                                <i class="fab fa-x-twitter" style="font-size:24px;color:#fff;"></i>
+                            </div>
+                            <div><div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1px;">Live Service</div><div style="font-size:22px;font-weight:900;color:#fff;">Twitter Live</div></div>
+                            <div style="margin-left:auto;display:flex;align-items:center;gap:5px;background:rgba(239,68,68,0.25);padding:5px 10px;border-radius:20px;border:1px solid rgba(239,68,68,0.5);">
+                                <div style="width:7px;height:7px;background:#ef4444;border-radius:50%;animation:livePulse 1.2s infinite;"></div>
+                                <span style="font-size:10px;font-weight:800;color:#ef4444;letter-spacing:1px;">LIVE</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:18px;padding:20px;text-align:center;">
+                        <i class="fab fa-x-twitter" style="font-size:48px;color:#1d9bf0;margin-bottom:12px;display:block;"></i>
+                        <div style="font-size:15px;font-weight:700;color:var(--text-main);margin-bottom:6px;">Twitter / X Live Checker</div>
+                        <div style="font-size:12px;color:var(--text-sub);">Coming soon — live account verification</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ====== THREADS LIVE PAGE ====== -->
+            <div id="liveThreadsPage" class="page">
+                <div class="content-body" style="padding:20px;padding-bottom:120px;">
+                    <div style="background:linear-gradient(135deg,#1a1a1a,#444444);border-radius:22px;padding:22px;margin-bottom:20px;box-shadow:0 10px 30px rgba(0,0,0,0.4);">
+                        <div style="display:flex;align-items:center;gap:14px;">
+                            <div style="width:52px;height:52px;background:rgba(255,255,255,0.15);border-radius:16px;display:flex;align-items:center;justify-content:center;">
+                                <i class="fab fa-threads" style="font-size:24px;color:#fff;"></i>
+                            </div>
+                            <div><div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1px;">Live Service</div><div style="font-size:22px;font-weight:900;color:#fff;">Threads Live</div></div>
+                            <div style="margin-left:auto;display:flex;align-items:center;gap:5px;background:rgba(239,68,68,0.25);padding:5px 10px;border-radius:20px;border:1px solid rgba(239,68,68,0.5);">
+                                <div style="width:7px;height:7px;background:#ef4444;border-radius:50%;animation:livePulse 1.2s infinite;"></div>
+                                <span style="font-size:10px;font-weight:800;color:#ef4444;letter-spacing:1px;">LIVE</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:18px;padding:20px;text-align:center;">
+                        <i class="fab fa-threads" style="font-size:48px;color:#aaaaaa;margin-bottom:12px;display:block;"></i>
+                        <div style="font-size:15px;font-weight:700;color:var(--text-main);margin-bottom:6px;">Threads Live Checker</div>
+                        <div style="font-size:12px;color:var(--text-sub);">Coming soon — live account verification</div>
                     </div>
                 </div>
             </div>
