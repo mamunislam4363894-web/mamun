@@ -200,8 +200,11 @@ function isValidUserId(userId) {
 
 // API: System Version
 app.get('/api/version', (req, res) => {
-    res.json({ version: db.data.settings.systemVersion });
+    const version = (db.data && db.data.settings && db.data.settings.systemVersion) || 1;
+    res.set('Cache-Control', 'no-store');
+    res.json({ version, ts: Date.now() });
 });
+
 
 // Request counter middleware
 app.use((req, res, next) => {
@@ -914,12 +917,40 @@ app.get('/api/user/:userId', async (req, res) => {
         ...activeTasks[key]
     }));
 
+    // Resolve balances using db helpers for consistency
+    const tokenBalance = db.getTokenBalance(user);
+
     res.json({
         success: true,
+        user: {
+            id: user.id,
+            username: user.username || 'User',
+            firstName: user.firstName || '',
+            lastName: user.lastName || '',
+            photo_url: user.photo_url || '',
+            // Balances — use consistent field names matching frontend expectations
+            balance_tokens: tokenBalance,
+            tokens: tokenBalance,
+            gems: user.balance_Gems || user.Gems || 0,
+            Gems: user.balance_Gems || user.Gems || 0,
+            usd: user.usd || 0,
+            // Status fields
+            banned: user.banned || false,
+            verified: user.verified || false,
+            adminVerified: user.adminVerified || false,
+            apiKey: user.apiKey || null,
+            apiStatus: user.apiStatus || 'allow',
+            // Stats
+            invites: user.referralCount || 0,
+            dailyStreak: user.dailyStreak || 0,
+            completedTasks: user.tasksDone || [],
+            referralCode: db.getReferralCode(user.id),
+        },
+        // Legacy top-level fields for backward compat
         userId: user.id,
         username: user.username || 'User',
-        tokens: db.getTokenBalance(user),
-        Gems: user.Gems || 0,
+        tokens: tokenBalance,
+        Gems: user.balance_Gems || user.Gems || 0,
         invites: user.referralCount || 0,
         dailyStreak: user.dailyStreak || 0,
         completedTasks: user.tasksDone || [],
@@ -928,6 +959,7 @@ app.get('/api/user/:userId', async (req, res) => {
         botUsername: (db.data.settings && db.data.settings.botUsername) || config.BOT_USERNAME || 'AutosVerify_bot'
     });
 });
+
 
 // API: Verify Task Completion
 app.post('/api/user/verify-task', async (req, res) => {
@@ -1151,7 +1183,7 @@ app.post('/api/register', async (req, res) => {
         invites: user.referralCount || 0,
         lastClaim: user.lastDaily || 0,
         dailyStreak: user.dailyStreak || 0,
-        completedTasks: user.completedTasks || [],
+        completedTasks: user.tasksDone || user.completedTasks || [],
         verified: user.successfulVerifications > 0 || user.verified || false,
         adminVerified: user.adminVerified || false,
         apiStatus: user.apiStatus || 'allow',
@@ -6636,6 +6668,7 @@ app.get('/api/features', (req, res) => {
         }
     };
 
+    res.set('Cache-Control', 'no-store');
     res.json({ 
         success: true, 
         features: flags,

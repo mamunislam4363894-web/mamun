@@ -220,19 +220,23 @@ var tg = window.Telegram?.WebApp || {
 tg.ready();
 tg.expand();
 
-// REAL-TIME UPDATES - Poll for changes
+// REAL-TIME UPDATES - Poll for admin-pushed version changes (every 30s)
 let currentSystemVersion = 0;
 setInterval(async () => {
     try {
-        const r = await fetch('/api/version');
+        const r = await fetch('/api/version', { cache: 'no-store' });
+        if (!r.ok) return;
         const d = await r.json();
-        if (d.version && currentSystemVersion && d.version > currentSystemVersion) {
-            console.log('[REAL-TIME] New update detected, refreshing...');
-            window.location.reload();
+        if (d.version) {
+            if (currentSystemVersion && d.version > currentSystemVersion) {
+                console.log('[VERSION] New server version detected, reloading...');
+                window.location.reload();
+            }
+            currentSystemVersion = d.version;
         }
-        currentSystemVersion = d.version;
     } catch(e) {}
-}, 5000); 
+}, 30000);
+
 
 if (tg.BackButton && tg.BackButton.onClick) {
     tg.BackButton.onClick(goBack);
@@ -4296,24 +4300,58 @@ async function loadAppCostConfig() {
 
 // Global state syncer for real-time updates from admin
 var _lastSyncTime = 0;
+var _lastUserSyncTime = 0;
+
 async function smartSync(force = false) {
     const now = Date.now();
-    if (!force && now - _lastSyncTime < 2000) return; // Minimum 2s between syncs
+    if (!force && now - _lastSyncTime < 5000) return; // Minimum 5s between syncs (was 2s)
 
     _lastSyncTime = now;
-    console.log('[SYNC] Refreshing platform config...');
 
-    return Promise.allSettled([
+    // Always sync admin config (features, services, costs)
+    const adminSyncPromises = [
         typeof loadFeatureFlags === 'function' ? loadFeatureFlags() : Promise.resolve(),
         typeof syncAdminData === 'function' ? syncAdminData() : Promise.resolve()
-    ]).then(results => {
-        const anySuccess = results.some(r => r.status === 'fulfilled');
-        if (anySuccess) console.log('[SYNC] Platform data updated');
-    }).catch(err => console.warn('[SYNC] Sync failed:', err));
+    ];
+
+    // Sync user balance every 15 seconds for real-time balance updates
+    if (force || (now - _lastUserSyncTime > 15000)) {
+        _lastUserSyncTime = now;
+        if (userData.id && userData.id !== 0) {
+            adminSyncPromises.push(
+                fetch(`/api/user/${userData.id}?t=${now}`, { cache: 'no-store' })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success && data.user) {
+                            const u = data.user;
+                            // Only update if server value differs (prevent flicker)
+                            if (typeof u.balance_tokens === 'number') userData.tokens = Math.max(0, u.balance_tokens);
+                            if (typeof u.gems === 'number') userData.Gems = Math.max(0, u.gems);
+                            if (typeof u.usd !== 'undefined') userData.usd = Math.max(0, u.usd || 0);
+                            if (typeof u.banned !== 'undefined') {
+                                userData.banned = u.banned;
+                                userStatus = u.banned ? 'banned' : 'active';
+                            }
+                            if (u.apiKey !== undefined) {
+                                if (u.apiKey) userData.apiKey = u.apiKey;
+                            }
+                            if (u.apiStatus) userData.apiStatus = u.apiStatus;
+                            renderBalances();
+                            // Persist to cache
+                            try { localStorage.setItem(`userData_${userData.id}`, JSON.stringify(userData)); } catch(e){}
+                        }
+                    })
+                    .catch(() => { /* silent – no network = keep cached */ })
+            );
+        }
+    }
+
+    return Promise.allSettled(adminSyncPromises).catch(() => {});
 }
 
-// Start auto-syncer (every 2 seconds for fast updates)
-setInterval(() => smartSync(), 2000);
+// Start auto-syncer (every 5 seconds – balanced for real-time feel without hammering server)
+setInterval(() => smartSync(), 5000);
+
 
 // Load cost config early so UI shows correct costs (email/ad reward, etc.)
 if (document.readyState === 'loading') {
@@ -7407,16 +7445,33 @@ async function continueInitialization() {
     showPage('home');
     applyProfilePhoto(userData.photo_url || _tgUser.photo_url || '');
     renderBalances();
-    // NOTE: registerAndFetchUser is already called in DOMContentLoaded before join check
-    // Do NOT call it again here to prevent race conditions
+
+    // Load all app config data immediately on startup
+    await Promise.allSettled([
+        loadFeatureFlags(),
+        loadAppCostConfig(),
+        syncAdminData()
+    ]);
+
+    // Apply feature flags immediately after loading
+    applyFeatureFlagsToHome();
+
+    // Load broadcasts and email service config
     loadBroadcast();
     fetchEmailServiceConfig();
+
+    // Apply saved theme
     const savedTheme = localStorage.getItem('theme') || 'dark';
     document.body.setAttribute('data-theme', savedTheme);
     updateThemeIcon(savedTheme);
+
+    // Initialize virtual numbers
     if (typeof initActiveVirtualNumbers === 'function') initActiveVirtualNumbers();
 
-    // Check user verification status and show appropriate welcome
+    // Force a fresh user sync to ensure balances are up-to-date
+    smartSync(true);
+
+    // Check user verification status and show welcome toast
     try {
         const joinCheck = await checkRequiredJoins();
         if (joinCheck.adminVerified) {
@@ -7428,6 +7483,7 @@ async function continueInitialization() {
         // Silently ignore errors
     }
 }
+
 
 document.addEventListener('DOMContentLoaded', async function () {
     try {

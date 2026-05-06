@@ -807,8 +807,9 @@ class Database {
 
     // Helper: get canonical token balance
     getTokenBalance(user) {
-        if (user.tokens !== undefined) return user.tokens;
-        if (user.balance_tokens !== undefined) return user.balance_tokens;
+        // Prefer balance_tokens (canonical) → tokens → balance → 0
+        if (user.balance_tokens !== undefined && user.balance_tokens !== null) return user.balance_tokens;
+        if (user.tokens !== undefined && user.tokens !== null) return user.tokens;
         return user.balance || 0;
     }
 
@@ -819,6 +820,7 @@ class Database {
         user.balance_tokens = val;
         user.balance = val;
     }
+
 
     addCredit(userId, amount, currency = 'Tokens') {
         const user = this.getUser(userId);
