@@ -10,7 +10,7 @@ const STATIC_ASSETS = [
     './style.css',
     './script.js',
     './web-utils.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',
     'https://telegram.org/js/telegram-web-app.js'
 ];
 

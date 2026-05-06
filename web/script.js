@@ -7662,6 +7662,120 @@ function copyNumOtp(otp) {
 window.copyNumOtp = copyNumOtp;
 window.extractOtp = extractOtp;
 
+// =============================================
+// LIVE PAGES — Routing & Titles
+// =============================================
+PAGE_TITLES['live2fa']        = '2FA LIVE';
+PAGE_TITLES['liveInstagram']  = 'INSTAGRAM LIVE';
+PAGE_TITLES['liveFacebook']   = 'FACEBOOK LIVE';
+PAGE_TITLES['liveTiktok']     = 'TIKTOK LIVE';
+PAGE_TITLES['liveTwitter']    = 'TWITTER LIVE';
+PAGE_TITLES['liveThreads']    = 'THREADS LIVE';
+
+// =============================================
+// 2FA TOTP LIVE — START / RESTART Logic
+// =============================================
+var _twofaInterval = null;
+
+/**
+ * Minimal TOTP generator (RFC 6238 / Base32 HMAC-SHA1)
+ * Works in-browser without any library dependency.
+ */
+function generateTOTP(secretBase32) {
+    // Base32 decode
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    const base32 = secretBase32.toUpperCase().replace(/\s/g,'').replace(/=/g,'');
+    let bits = '';
+    for (const c of base32) {
+        const idx = alphabet.indexOf(c);
+        if (idx < 0) continue;
+        bits += idx.toString(2).padStart(5, '0');
+    }
+    const bytes = [];
+    for (let i = 0; i + 8 <= bits.length; i += 8) {
+        bytes.push(parseInt(bits.slice(i, i + 8), 2));
+    }
+
+    // Counter = floor(epoch / 30)
+    const counter = Math.floor(Date.now() / 30000);
+    const msg = new Uint8Array(8);
+    let c = counter;
+    for (let i = 7; i >= 0; i--) { msg[i] = c & 0xff; c >>>= 8; }
+
+    // HMAC-SHA1 via SubtleCrypto (async – handled via Promise)
+    return window.crypto.subtle.importKey(
+        'raw', new Uint8Array(bytes), { name: 'HMAC', hash: 'SHA-1' }, false, ['sign']
+    ).then(key => window.crypto.subtle.sign('HMAC', key, msg))
+     .then(sig => {
+        const h = new Uint8Array(sig);
+        const offset = h[19] & 0xf;
+        const code = (((h[offset] & 0x7f) << 24) |
+                      ((h[offset+1] & 0xff) << 16) |
+                      ((h[offset+2] & 0xff) << 8)  |
+                       (h[offset+3] & 0xff)) % 1000000;
+        return String(code).padStart(6, '0');
+     });
+}
+
+function start2faLive() {
+    const input = document.getElementById('twofa-input');
+    const secret = input ? input.value.trim() : '';
+    if (!secret) {
+        window.showToast('⚠️ Please enter a 2FA secret key first!');
+        return;
+    }
+
+    clearInterval(_twofaInterval);
+    updateTwoFA(secret);
+
+    _twofaInterval = setInterval(() => updateTwoFA(secret), 1000);
+
+    // Update button states
+    const startBtn = document.getElementById('twofa-start-btn');
+    if (startBtn) {
+        startBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> RUNNING';
+        startBtn.style.background = 'linear-gradient(135deg,#059669,#10b981)';
+    }
+}
+
+function restart2faLive() {
+    clearInterval(_twofaInterval);
+    _twofaInterval = null;
+
+    const result = document.getElementById('twofa-result');
+    const timer  = document.getElementById('twofa-timer');
+    if (result) result.textContent = '------';
+    if (timer)  timer.textContent  = 'Waiting...';
+
+    const startBtn = document.getElementById('twofa-start-btn');
+    if (startBtn) {
+        startBtn.innerHTML = '<i class="fas fa-play"></i> START';
+        startBtn.style.background = 'linear-gradient(135deg,#4f46e5,#7c3aed)';
+    }
+    window.showToast('🔄 Reset! Enter key and press START.');
+}
+
+function updateTwoFA(secret) {
+    const remaining = 30 - (Math.floor(Date.now() / 1000) % 30);
+    const timer = document.getElementById('twofa-timer');
+    if (timer) timer.textContent = `Refreshes in ${remaining}s`;
+
+    generateTOTP(secret)
+        .then(code => {
+            const result = document.getElementById('twofa-result');
+            if (result) result.textContent = code;
+        })
+        .catch(() => {
+            const result = document.getElementById('twofa-result');
+            if (result) result.textContent = 'ERROR';
+            if (timer)  timer.textContent  = 'Invalid secret key';
+        });
+}
+
+window.start2faLive   = start2faLive;
+window.restart2faLive = restart2faLive;
+
+
 function copyOtpFromChip(btn, code) {
     if (!code) return;
 
