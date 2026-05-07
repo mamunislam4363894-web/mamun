@@ -2352,6 +2352,11 @@ async function claimAdReward() {
             } else if (currentAdContext === 'gift_claim' && pendingGiftId) {
                 // Gift Ad Completed - Now claim the gift
                 claimGiftReward(pendingGiftId);
+            } else if (currentAdContext === 'watch_ad' || currentAdContext === 'zero_balance_trigger') {
+                // Ensure user goes back to the home page or previous active page to prevent blank screen
+                if (!currentPage || document.querySelectorAll('.page.active').length === 0) {
+                    showPage('home');
+                }
             }
         } else {
             window.showToast(data.message || 'Error claiming ad reward');
