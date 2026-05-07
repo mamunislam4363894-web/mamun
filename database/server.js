@@ -7704,18 +7704,18 @@ app.post('/api/check-required-joins', async (req, res) => {
         }
     }
 
-    // 4. Verification Check
+    // 4. Verification Check (optional, separate from join requirement)
     const vStatus = await checkUserVerificationRequirements(userId);
     
-    // Auto-verify if they meet criteria and have joined chats
-    if (vStatus.met && channelJoined && groupJoined && (!user || !user.verified)) {
-        if (user) {
-            user.verified = true;
-            db.updateUser(user);
-        }
+    // Auto-verify if they meet full criteria and have joined chats
+    if (vStatus.met && channelJoined && groupJoined && user && !user.verified) {
+        user.verified = true;
+        db.updateUser(user);
     }
 
-    const canProceed = reqs.enabled ? (vStatus.met && channelJoined && groupJoined) : (channelJoined && groupJoined);
+    // canProceed is ONLY based on join status (channel + group)
+    // Full verification requirements are a separate premium feature
+    const canProceed = channelJoined && groupJoined;
 
     res.json({
         success: true,
@@ -7724,6 +7724,7 @@ app.post('/api/check-required-joins', async (req, res) => {
         channelJoined,
         groupJoined,
         verified: user?.verified || false,
+        adminVerified: user?.adminVerified || false,
         requirements: vStatus
     });
 });

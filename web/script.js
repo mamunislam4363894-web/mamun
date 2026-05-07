@@ -3098,19 +3098,21 @@ function renderReferralHistory() {
             container.innerHTML = data.referrals.map(h => {
                 const date = new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                 const time = new Date(h.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                // ✅ FIX: Show profile photo if available, else colored initial avatar
+                const avatarHtml = h.photo_url
+                    ? `<img src="${h.photo_url}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--border-color)" onerror="this.outerHTML='<div style=\'width:36px;height:36px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#000;font-weight:800;font-size:14px;\'>${h.name.charAt(0).toUpperCase()}</div>'">`
+                    : `<div style="width:36px;height:36px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#000;font-weight:800;font-size:14px;">${h.name.charAt(0).toUpperCase()}</div>`;
                 return `
                 <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid var(--border-color)">
                     <div style="display:flex; gap:10px; align-items:center">
-                        <div style="width:32px; height:32px; background:#333; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700">
-                            ${h.name.charAt(0)}
-                        </div>
+                        ${avatarHtml}
                         <div>
                             <div style="font-size:13px; font-weight:700; color:var(--text-main)">${h.name}</div>
                             <div style="font-size:10px; color:var(--text-sub)">${date} • ${time}</div>
                         </div>
                     </div>
                     <div style="text-align:right">
-                        <div style="font-size:10px; color:${h.status === 'Active' ? '#22c55e' : '#f59e0b'}">${h.status}</div>
+                        <div style="font-size:10px; color:${h.status === 'Verified' ? '#22c55e' : '#f59e0b'}">${h.status}</div>
                         <div style="font-size:12px; font-weight:800; color:var(--text-main)">${h.reward} T</div>
                     </div>
                 </div>
@@ -5933,15 +5935,21 @@ function generateTempMail(type) {
     if (!type) type = 'temp';
 
     // ✅ FIX: Premium/hotmail types must use premium email API, NOT temp mail API
+    // Clear any existing session so NEW EMAIL always generates fresh
     if (type === 'premium') {
+        // Clear session to force new email generation
+        mailSessions.premium = null;
+        window._isAutoGeneratingPremium = false;
         generatePremiumMail('gmail');
         return;
     }
     if (type === 'hot' || type === 'hotmail') {
+        mailSessions.hot = null;
         generatePremiumMail('hotmail');
         return;
     }
     if (type === 'student') {
+        mailSessions.student = null;
         generatePremiumMail('student');
         return;
     }
@@ -6099,9 +6107,27 @@ async function confirmRenewCustomEmail() {
         if (data.success) {
             window.showToast('✅ Email renewed successfully!', 'success');
 
-            // Set the new session
-            const type = currentRenewType === 'premium' ? 'premium' : (currentRenewType === 'hot' ? 'hot' : 'hotmail');
-            mailSessions[type] = data.sessionId;
+            // Set the new session properly
+            const type = currentRenewType === 'premium' ? 'premium' : (currentRenewType === 'hot' ? 'hot' : 'student');
+            
+            // Update session with new email
+            const newEmail = data.email || email; // email from input
+            mailSessions[type] = {
+                email: newEmail,
+                id: data.sessionId || (mailSessions[type]?.id),
+                type: type,
+                sessionId: data.sessionId || (mailSessions[type]?.sessionId)
+            };
+
+            // ✅ FIX: Only replace the email address in the UI, no page reload
+            const addrElId = type === 'premium' ? 'premiumMailAddr' : (type === 'hot' ? 'hotMailAddr' : 'studentMailAddr');
+            const addrEl = document.getElementById(addrElId);
+            if (addrEl) {
+                addrEl.textContent = newEmail;
+                addrEl.style.fontStyle = 'normal';
+                addrEl.style.opacity = '1';
+            }
+            renderBalances();
 
             // Update balance and start polling
             if (data.newBalance !== undefined) {
