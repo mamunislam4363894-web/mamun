@@ -155,7 +155,7 @@ async function fetchMessages(type, limit = 50, sinceMinutes = 60) {
 
                 const parsed_mail = await simpleParser(raw);
 
-                const body = parsed_mail.text || parsed_mail.html || '';
+                const body = parsed_mail.html || parsed_mail.text || '';
                 const subject = parsed_mail.subject || '(No Subject)';
                 const from = parsed_mail.from?.text || 'Unknown';
                 const to = parsed_mail.to?.text || '';
