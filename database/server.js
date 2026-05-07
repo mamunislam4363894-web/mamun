@@ -3378,8 +3378,8 @@ app.get('/api/premium-emails/inbox', async (req, res) => {
             from: m.from || 'Unknown',
             to: m.to || targetEmail,
             subject: m.subject || '(No Subject)',
-            body: (m.body || m.snippet || '').substring(0, 3000),
-            preview: (m.body || m.snippet || '').substring(0, 120),
+            body: m.body || m.snippet || '',
+            preview: String(m.body || m.snippet || '').substring(0, 120),
             otp: m.otp || (function(text) {
                 if (!text) return null;
                 // Exclude common false positives like Microsoft Redmond Zip (98052) or Google MV Zip (94043)
