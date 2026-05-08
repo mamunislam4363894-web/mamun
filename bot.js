@@ -666,9 +666,13 @@ function showMandatoryJoin(chatId, membership, msgId = null, isFirstTime = false
 
     // Add join buttons for missing items only
     missingItems.forEach(item => {
+        let url = item.name;
+        if (!url.startsWith('http')) {
+            url = `https://t.me/${url.replace('@', '')}`;
+        }
         buttons.push([{
             text: `Join ${item.label} ↗`,
-            url: `https://t.me/${item.name.replace('@', '')}`
+            url: url
         }]);
     });
 
@@ -918,6 +922,15 @@ async function sendMainMenu(chatId, user, msgFrom) {
     welcomeText = welcomeText.replace(/{name}/g, firstName);
 
     // Keyboard with admin-configurable links
+    let channelUrl = requiredChannel;
+    if (!channelUrl.startsWith('http')) {
+        channelUrl = `https://t.me/${channelUrl.replace('@', '')}`;
+    }
+    let groupUrl = requiredGroup;
+    if (!groupUrl.startsWith('http')) {
+        groupUrl = `https://t.me/${groupUrl.replace('@', '')}`;
+    }
+
     const keyboard = {
         reply_markup: {
             inline_keyboard: [
@@ -926,8 +939,8 @@ async function sendMainMenu(chatId, user, msgFrom) {
                     { text: '🔑 API Access', callback_data: 'view_api_key' },
                     { text: '📊 Profile', web_app: { url: miniAppUrl + '#profile' } }
                 ],
-                [{ text: '📢 Join Channel', url: `https://t.me/${requiredChannel.replace('@', '')}` }],
-                [{ text: '👥 Join Group', url: `https://t.me/${requiredGroup.replace('@', '')}` }],
+                [{ text: '📢 Join Channel', url: channelUrl }],
+                [{ text: '👥 Join Group', url: groupUrl }],
                 [{ text: '📺 YouTube Channel', url: requiredYoutube }]
             ]
         }
