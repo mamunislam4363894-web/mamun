@@ -4266,7 +4266,7 @@
     "premiumMail": true,
     "accountsShop": true,
     "cardsVcc": true,
-    "joinRequired": false,
+    "joinRequired": true,
     "home_verify": true,
     "home_mail": true,
     "home_number": true,

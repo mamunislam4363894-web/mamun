@@ -6597,6 +6597,7 @@ function getDefaultFeatureFlags() {
         accountsShop: true,
         cardsVcc: true,
         joinRequired: true,
+        requireTelegram: true,
 
         // Home service cards
         home_verify: true,
@@ -6644,7 +6645,6 @@ function getFeatureFlags() {
 
     // Include global requirement flags
     const flags = { ...db.data.featureFlags };
-    flags.requireTelegram = db.data.adminSettings?.requireTelegram !== false;
 
     return flags;
 }
