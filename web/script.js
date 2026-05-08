@@ -310,21 +310,26 @@ var userData = {
 // FEATURE FLAGS (Button Management)
 var featureFlags = null;
 function applyFeatureFlagsToHome() {
-    const ids = [
-        { key: 'home_verify', el: 'verifyServiceCard' },
-        { key: 'home_mail', el: 'mailServiceCard' },
-        { key: 'home_number', el: 'numberServiceCard' },
-        { key: 'home_gemini', el: 'geminiServiceCard' },
-        { key: 'home_chatgpt', el: 'chatgptServiceCard' },
-        { key: 'home_premiumMail', el: 'emailServiceCard' },
-        { key: 'home_hotMail', el: 'hotMailCard' },
-        { key: 'home_studentMail', el: 'studentMailCard' }
+    const mappings = [
+        { key: 'home_verify', selector: '[onclick="nav(\\\'verify\\\')"]' },
+        { key: 'home_mail', selector: '[onclick="nav(\\\'emailMenu\\\')"]' },
+        { key: 'home_number', selector: '[onclick="nav(\\\'numberService\\\')"]' },
+        { key: 'home_accountsShop', selector: '[onclick="nav(\\\'itemSell\\\')"]' },
+        { key: 'home_videoDownload', selector: '[onclick="nav(\\\'videoDownload\\\')"]' },
+        { key: 'home_aiPhoto', selector: '[onclick="nav(\\\'aiPhotoGenerator\\\')"]' },
+        { key: 'home_aiVideo', selector: '[onclick="nav(\\\'aiVideoGenerator\\\')"]' },
+        { key: 'home_bgRemover', selector: '[onclick="nav(\\\'bgRemover\\\')"]' },
+        { key: 'dailyCheckin', selector: '[onclick="nav(\\\'daily\\\')"]' },
+        { key: 'tasksSystem', selector: '[onclick="nav(\\\'tasks\\\')"]' },
+        { key: 'referralSystem', selector: '[onclick="nav(\\\'invite\\\')"]' },
+        { key: 'exchange', selector: '[onclick="nav(\\\'earnMenuPage\\\')"]' }
     ];
-    ids.forEach(item => {
-        const el = document.getElementById(item.el);
-        if (!el) return;
-        const enabled = !featureFlags || featureFlags[item.key] !== false;
-        el.style.display = enabled ? '' : 'none';
+    mappings.forEach(item => {
+        const els = document.querySelectorAll(item.selector);
+        els.forEach(el => {
+            const enabled = !featureFlags || featureFlags[item.key] !== false;
+            el.style.display = enabled ? '' : 'none';
+        });
     });
 }
 
