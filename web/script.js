@@ -322,7 +322,11 @@ function applyFeatureFlagsToHome() {
         { key: 'dailyCheckin', selector: '[onclick="nav(\'daily\')"]' },
         { key: 'tasksSystem', selector: '[onclick="nav(\'tasks\')"]' },
         { key: 'referralSystem', selector: '[onclick="nav(\'invite\')"]' },
-        { key: 'exchange', selector: '[onclick="nav(\'earnMenuPage\')"]' }
+        { key: 'exchange', selector: '[onclick="nav(\'earnMenuPage\')"]' },
+        { key: 'home_vpn', selector: '[onclick="nav(\'vpnServices\')"]' },
+        { key: 'home_vcc', selector: '[onclick="nav(\'vccCards\')"]' },
+        { key: 'home_accounts', selector: '[onclick="nav(\'services\')"]' },
+        { key: 'home_gemini', selector: '[onclick="nav(\'geminiVerification\')"]' }
     ];
     mappings.forEach(item => {
         const els = document.querySelectorAll(item.selector);
