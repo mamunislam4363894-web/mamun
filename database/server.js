@@ -6596,7 +6596,7 @@ function getDefaultFeatureFlags() {
         premiumMail: true,
         accountsShop: true,
         cardsVcc: true,
-        joinRequired: false,
+        joinRequired: true,
 
         // Home service cards
         home_verify: true,
