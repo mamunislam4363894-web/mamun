@@ -1512,6 +1512,15 @@
                             <div id="editUserName" class="text-lg font-bold text-white mb-2"></div>
                         </div>
 
+                        <!-- Role Field -->
+                        <div class="mb-4">
+                            <label class="text-xs text-gray-400 uppercase font-bold block mb-1">Role / Admin Access</label>
+                            <select id="editUserRole" class="w-full bg-black/30 border border-white/10 p-3 rounded-xl text-white">
+                                <option value="user">Regular User</option>
+                                <option value="helper_admin">Helper Admin</option>
+                            </select>
+                        </div>
+
                         <!-- Balance Fields -->
                         <div class="grid grid-cols-3 gap-4 mb-4">
                             <div>
@@ -6793,6 +6802,10 @@
             // Set API Status
             document.getElementById('editUserApiStatus').value = u.apiStatus || 'allow';
 
+            // Set Role
+            const roleEl = document.getElementById('editUserRole');
+            if (roleEl) roleEl.value = u.role || 'user';
+
             // Check if user has API key and show/hide section
             const apiKeySection = document.getElementById('apiKeySection');
             if (apiKeySection) {
@@ -6825,8 +6838,9 @@
             const usd = parseFloat(document.getElementById('editUserUSD').value) || 0;
             const status = document.getElementById('editUserVerified').value;
             const apiStatus = document.getElementById('editUserApiStatus').value;
+            const role = document.getElementById('editUserRole').value;
 
-            console.log('[ADMIN] Saving user changes:', { userId, tokens, gems, usd, status, apiStatus });
+            console.log('[ADMIN] Saving user changes:', { userId, tokens, gems, usd, status, apiStatus, role });
 
             const payload = {
                 tokens: tokens,
@@ -6835,7 +6849,8 @@
                 usd: usd,
                 verified: (status === 'verified' || status === 'admin'),
                 adminVerified: (status === 'admin'),
-                apiStatus: apiStatus
+                apiStatus: apiStatus,
+                role: role
             };
 
             fetch(`/api/admin/users/${userId}`, {

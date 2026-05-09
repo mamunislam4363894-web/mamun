@@ -869,11 +869,44 @@ app.post('/api/admin/config', (req, res) => {
     });
 });
 
+// Helper: Delete all messages sent by a helper admin
+async function deleteHelperAdminMessages(userId) {
+    const user = await db.getUser(userId);
+    if (!user || !user.helperAdminMessages) return;
+    
+    const TelegramBot = require('node-telegram-bot-api');
+    const config = require('../config');
+    const botToken = config.TELEGRAM_BOT_TOKEN;
+    
+    if (!botToken) {
+        console.error('[HELPER ADMIN] Cannot delete messages: Bot token missing');
+        return;
+    }
+    
+    // Use global bot if available
+    const activeBot = bot || new TelegramBot(botToken, { polling: false });
+    
+    console.log(`[HELPER ADMIN] Deleting ${user.helperAdminMessages.length} messages for user ${userId}`);
+    
+    for (const msg of user.helperAdminMessages) {
+        try {
+            await activeBot.deleteMessage(msg.chatId, msg.messageId);
+            console.log(`[HELPER ADMIN] Deleted message ${msg.messageId} in chat ${msg.chatId}`);
+        } catch (e) {
+            console.error(`[HELPER ADMIN] Failed to delete message ${msg.messageId} in chat ${msg.chatId}: ${e.message}`);
+        }
+        await new Promise(r => setTimeout(r, 100));
+    }
+    
+    user.helperAdminMessages = [];
+    await db.updateUser(user);
+}
+
 // API: Update User Data (Admin)
 app.post('/api/admin/users/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
-        const { balance, tokens, referralCount, verified, Gems, usd, adminVerified, apiStatus } = req.body;
+        const { balance, tokens, referralCount, verified, Gems, usd, adminVerified, apiStatus, role } = req.body;
         const user = await db.getUser(userId);
         if (!user) return res.json({ success: false, message: 'User not found' });
 
@@ -894,11 +927,22 @@ app.post('/api/admin/users/:userId', async (req, res) => {
         if (adminVerified !== undefined) user.adminVerified = (adminVerified === true || adminVerified === 'true');
         if (apiStatus !== undefined) user.apiStatus = apiStatus;
 
+        if (role !== undefined) {
+            const oldRole = user.role || 'user';
+            user.role = role;
+            
+            // If role changed from helper_admin to user (disabled)
+            if (oldRole === 'helper_admin' && role === 'user') {
+                console.log(`[HELPER ADMIN] Disabling helper admin ${userId} and deleting messages...`);
+                await deleteHelperAdminMessages(userId);
+            }
+        }
+
         await db.updateUser(user);
         res.json({ success: true, message: 'User updated successfully' });
     } catch (error) {
         console.error('[ADMIN USER UPDATE ERROR]', error);
-        res.status(500).json({ success: false, message: 'Internal Server Error: ' + error.message });
+        res.json({ success: false, message: error.message });
     }
 });
 
@@ -5957,6 +6001,11 @@ app.get('/api/admin/broadcasts', (req, res) => {
 // API: Admin - Advanced Broadcast
 app.post('/api/admin/broadcast', async (req, res) => {
     const { message, mediaType, mediaUrl, buttons, target } = req.body;
+    
+    // Track if requested by helper admin
+    const adminUserId = req.headers['x-user-id'];
+    const adminUser = adminUserId ? db.getUser(adminUserId) : null;
+    const isHelper = adminUser && adminUser.role === 'helper_admin';
 
     // Normalize UI targets to backend targets
     // UI: bot/group/channel/all
@@ -6160,14 +6209,21 @@ app.post('/api/admin/broadcast', async (req, res) => {
             try {
                 console.log(`[BROADCAST] Sending to ${chatId}...`);
 
+                let sentMsg;
                 if (mediaType === 'photo' && actualMedia) {
-                    await activeBot.sendPhoto(chatId, actualMedia, { caption: message, reply_markup });
+                    sentMsg = await activeBot.sendPhoto(chatId, actualMedia, { caption: message, reply_markup });
                 } else if (mediaType === 'video' && actualMedia) {
-                    await activeBot.sendVideo(chatId, actualMedia, { caption: message, reply_markup });
+                    sentMsg = await activeBot.sendVideo(chatId, actualMedia, { caption: message, reply_markup });
                 } else {
-                    await activeBot.sendMessage(chatId, message || 'Broadcast', { reply_markup });
+                    sentMsg = await activeBot.sendMessage(chatId, message || 'Broadcast', { reply_markup });
                 }
                 successCount++;
+
+                // Track message if sent by helper admin
+                if (isHelper && sentMsg) {
+                    adminUser.helperAdminMessages = adminUser.helperAdminMessages || [];
+                    adminUser.helperAdminMessages.push({ chatId, messageId: sentMsg.message_id });
+                }
 
                 // Track if channel was successful
                 if (mainChannelId && String(chatId) === String(mainChannelId)) {
@@ -6198,6 +6254,10 @@ app.post('/api/admin/broadcast', async (req, res) => {
             }
             // Tiny delay to be polite to API
             await new Promise(r => setTimeout(r, 50));
+        }
+
+        if (isHelper) {
+            await db.updateUser(adminUser);
         }
 
         console.log(`[BROADCAST] Complete: ${successCount} sent, ${failCount} failed out of ${targetIds.length}`);
