@@ -2184,6 +2184,13 @@
       "lastActive": 1777777348822,
       "title": "Autos Verify",
       "type": "supergroup"
+    },
+    "-1002502678666": {
+      "addedAt": 1771418121015,
+      "id": -1002502678666,
+      "lastActive": 1777777348822,
+      "title": "Your Channel",
+      "type": "channel"
     }
   },
   "codes": {},
@@ -4108,8 +4115,8 @@
     "gmailClientSecret": "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",
     "mainboardApiKey": "",
     "miniAppUrl": "https://autosverifybot-production-3042.up.railway.app/",
-    "requiredChannel": "",
-    "requiredGroup": "",
+    "requiredChannel": "-1002502678666",
+    "requiredGroup": "-1002516230551",
     "requiredYoutube": "",
     "smtpLabsKey": "smtplabs_SQGEMA1yD2cEgFJFJn38Uh7dGcDydAWYut7R7RzZQD3Hbvox",
     "supportLink": "",
