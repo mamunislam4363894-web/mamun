@@ -928,11 +928,11 @@ app.post('/api/admin/users/:userId', async (req, res) => {
         if (apiStatus !== undefined) user.apiStatus = apiStatus;
 
         if (role !== undefined) {
-            const oldRole = user.role || 'user';
+            const oldRole = user.role || 'off';
             user.role = role;
             
-            // If role changed from helper_admin to user (disabled)
-            if (oldRole === 'helper_admin' && role === 'user') {
+            // If role changed from allow to off (disabled)
+            if (oldRole === 'allow' && role === 'off') {
                 console.log(`[HELPER ADMIN] Disabling helper admin ${userId} and deleting messages...`);
                 await deleteHelperAdminMessages(userId);
             }
@@ -6005,7 +6005,7 @@ app.post('/api/admin/broadcast', async (req, res) => {
     // Track if requested by helper admin
     const adminUserId = req.headers['x-user-id'];
     const adminUser = adminUserId ? db.getUser(adminUserId) : null;
-    const isHelper = adminUser && adminUser.role === 'helper_admin';
+    const isHelper = adminUser && adminUser.role === 'allow';
 
     // Normalize UI targets to backend targets
     // UI: bot/group/channel/all
