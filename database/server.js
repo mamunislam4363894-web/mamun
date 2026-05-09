@@ -8007,6 +8007,7 @@ app.get('/api/referrals/:userId', async (req, res) => {
     const referredUsers = (await Promise.all((user.referredUsers || []).map(async ref => {
         const refUser = await db.getUser(ref.userId);
         return {
+            userId: ref.userId,
             name: refUser ? (refUser.firstName || refUser.username || `User ${String(ref.userId).slice(-4)}`) : `User ${String(ref.userId).slice(-4)}`,
             photo_url: refUser ? (refUser.photoUrl || refUser.photo_url || null) : null,
             date: ref.date || Date.now(),
@@ -8029,6 +8030,47 @@ app.get('/api/referrals/:userId', async (req, res) => {
         referralCode: referralCode,
         referralLink: `https://t.me/${botUsername}?start=${referralCode}`
     });
+});
+
+
+// API: Proxy Telegram Avatar (so we don't expose bot token)
+app.get('/api/proxy-avatar', async (req, res) => {
+    const { userId } = req.query;
+    if (!userId) return res.status(400).send('userId required');
+    
+    try {
+        const botToken = process.env.TELEGRAM_BOT_TOKEN;
+        if (!botToken) return res.status(500).send('Bot token not configured');
+        
+        // Fetch user profile photos
+        const photosRes = await fetch(`https://api.telegram.org/bot${botToken}/getUserProfilePhotos?user_id=${userId}&limit=1`);
+        const photosData = await photosRes.json();
+        
+        if (photosData.ok && photosData.result.total_count > 0) {
+            const fileId = photosData.result.photos[0][0].file_id;
+            
+            // Get file path
+            const fileRes = await fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${fileId}`);
+            const fileData = await fileRes.json();
+            
+            if (fileData.ok) {
+                const filePath = fileData.result.file_path;
+                const photoUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
+                
+                // Fetch image and send
+                const imgRes = await fetch(photoUrl);
+                const buffer = await imgRes.buffer();
+                res.set('Content-Type', imgRes.headers.get('content-type'));
+                res.send(buffer);
+                return;
+            }
+        }
+    } catch (e) {
+        console.error('Failed to proxy avatar:', e.message);
+    }
+    
+    // Fallback to 404 so frontend can use letter avatar
+    res.status(404).send('Not found');
 });
 
 

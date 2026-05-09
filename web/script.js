@@ -3113,9 +3113,8 @@ function renderReferralHistory() {
                 const date = new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                 const time = new Date(h.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
                 // ✅ FIX: Show profile photo if available, else colored initial avatar
-                const avatarHtml = h.photo_url
-                    ? `<img src="${h.photo_url}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--border-color)" onerror="this.outerHTML='<div style=\'width:36px;height:36px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#000;font-weight:800;font-size:14px;\'>${h.name.charAt(0).toUpperCase()}</div>'">`
-                    : `<div style="width:36px;height:36px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#000;font-weight:800;font-size:14px;">${h.name.charAt(0).toUpperCase()}</div>`;
+                const avatarUrl = h.photo_url || `/api/proxy-avatar?userId=${h.userId}`;
+                const avatarHtml = `<img src="${avatarUrl}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--border-color)" onerror="this.outerHTML='<div style=\'width:36px;height:36px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#000;font-weight:800;font-size:14px;\'>${h.name.charAt(0).toUpperCase()}</div>'">`;
                 return `
                 <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid var(--border-color)">
                     <div style="display:flex; gap:10px; align-items:center">
@@ -3812,7 +3811,9 @@ function renderRecentActivity(history) {
         'bonus': { icon: 'fas fa-gift', color: '#fbbf24', name: 'Welcomes' },
         'gift_claimed': { icon: 'fas fa-gift', color: '#f59e0b', name: 'Gift Claimed' },
         'gift': { icon: 'fas fa-gift', color: '#f59e0b', name: 'Gift' },
-        'support_contact': { icon: 'fas fa-headset', color: '#f59e0b', name: 'Support Contact' }
+        'support_contact': { icon: 'fas fa-headset', color: '#f59e0b', name: 'Support Contact' },
+        'scratch_reward': { icon: 'fas fa-eraser', color: '#10b981', name: 'Scratch Reward' },
+        'quiz_reward': { icon: 'fas fa-lightbulb', color: '#3b82f6', name: 'Quiz Reward' }
     };
 
     if (!history || history.length === 0) {
