@@ -98,6 +98,12 @@ function shouldExclude(token, context, fullText) {
         if (new RegExp(`(\\$|usd|tk|৳|rs\\.?)\\s*${token}`).test(context)) return true;
     }
 
+    // --- Address context (exclude street numbers) ---
+    const afterContext = context.substring(context.indexOf(token) + token.length, context.indexOf(token) + token.length + 30).toLowerCase();
+    if (/\b(street|road|ave|avenue|blvd|boulevard|lane|drive|way|park|court|plaza|square)\b/i.test(afterContext)) {
+        return true;
+    }
+
     // --- URL / Email context ---
     const urlContext = context.substring(
         Math.max(0, context.indexOf(token) - 30),
@@ -233,6 +239,10 @@ function extractOTP(emailText, subject = '') {
     while ((match = digitRegex.exec(combinedText)) !== null) {
         const token = match[1];
         const position = match.index;
+        const charBefore = position > 0 ? combinedText[position - 1] : '';
+
+        // Skip numbers following a dot (likely username or decimal part)
+        if (charBefore === '.') continue;
 
         // Skip years
         if (/^(19|20)\d{2}$/.test(token)) continue;

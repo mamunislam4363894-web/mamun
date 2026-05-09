@@ -365,7 +365,7 @@ async function validateMandatoryChannels() {
 // Helper: Check if membership check should be skipped
 function shouldSkipMembershipCheck() {
     // 1. Check hardcoded config (Emergency override)
-    if (config.SKIP_MANDATORY_JOIN) return true;
+    if (config.SKIP_MANDATORY_JOIN === true || config.SKIP_MANDATORY_JOIN === 'true') return true;
 
     // 2. Check dynamic database flag (Feature Flags from Admin Panel)
     const flags = db.data?.featureFlags || {};

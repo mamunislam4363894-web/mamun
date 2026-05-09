@@ -5703,8 +5703,13 @@ function extractOtp(text) {
         if (m && m[1]) return m[1].trim();
     }
 
-    // 2. Fallback to any 4-8 digit number
-    const matches = text.match(/\b[0-9]{4,8}\b/g) || [];
+    // 2. Fallback to any 4-8 digit number (skip if preceded by a dot like in usernames)
+    const fallbackRegex = /(?:^|[^.])\b([0-9]{4,8})\b/g;
+    const matches = [];
+    let m;
+    while ((m = fallbackRegex.exec(text)) !== null) {
+        matches.push(m[1]);
+    }
     if (matches.length === 0) return null;
 
     const blacklist = ['98052', '94043', '98034', '94040', '95014', '2022', '2023', '2024', '2025', '2026'];
@@ -7059,10 +7064,7 @@ async function autoGeneratePremiumMailWrapper() {
         return;
     }
 
-    if (Math.max(0, userData.tokens || 0) < cost) {
-        nav('earn');
-        return;
-    }
+    // Balance check removed to allow unlimited usage as requested
 
     const addrEl = document.getElementById('premiumMailAddr');
     if (addrEl) {
