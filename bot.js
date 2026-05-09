@@ -551,13 +551,13 @@ async function checkMembership(userId) {
                         const channelMember = await bot.getChatMember(requiredChannelName, userId);
                         results.channel = validStatuses.includes(channelMember.status);
                     } catch (e2) {
-                        results.channel = config.SKIP_MANDATORY_JOIN || false;
+                        results.channel = (config.SKIP_MANDATORY_JOIN === true || config.SKIP_MANDATORY_JOIN === 'true');
                     }
                 } else {
                     if (!error.message.includes('chat not found') && !error.message.includes('PARTICIPANT_ID_INVALID')) {
                         console.log(`[MEMBERSHIP] Channel check for ${userId} (${requiredChannelId}): ${error.message}`);
                     }
-                    results.channel = config.SKIP_MANDATORY_JOIN || false;
+                    results.channel = (config.SKIP_MANDATORY_JOIN === true || config.SKIP_MANDATORY_JOIN === 'true');
                 }
             }
         } else {
@@ -577,13 +577,13 @@ async function checkMembership(userId) {
                         const groupMember = await bot.getChatMember(requiredGroupName, userId);
                         results.group = validStatuses.includes(groupMember.status);
                     } catch (e2) {
-                        results.group = config.SKIP_MANDATORY_JOIN || false;
+                        results.group = (config.SKIP_MANDATORY_JOIN === true || config.SKIP_MANDATORY_JOIN === 'true');
                     }
                 } else {
                     if (!error.message.includes('chat not found') && !error.message.includes('PARTICIPANT_ID_INVALID')) {
                         console.log(`[MEMBERSHIP] Group check for ${userId} (${requiredGroupId}): ${error.message}`);
                     }
-                    results.group = config.SKIP_MANDATORY_JOIN || false;
+                    results.group = (config.SKIP_MANDATORY_JOIN === true || config.SKIP_MANDATORY_JOIN === 'true');
                 }
             }
         } else {
