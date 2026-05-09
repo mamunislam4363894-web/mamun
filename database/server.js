@@ -6032,7 +6032,7 @@ app.post('/api/admin/broadcast', async (req, res) => {
         } else {
             // Fallback: Get channels from database
             const groups = db.getGroups();
-            const onlyChannels = groups.filter(g => g.type === 'channel' || g.id.toString().startsWith('-100'));
+            const onlyChannels = groups.filter(g => g.type === 'channel');
             if (onlyChannels.length > 0) targetIds.push(...onlyChannels.map(g => g.id));
         }
     }
@@ -6041,7 +6041,7 @@ app.post('/api/admin/broadcast', async (req, res) => {
         // Only send to groups if explicitly selected (not when 'all' is selected)
         // Because if channel is linked to group, channel post will auto appear in group
         const groups = db.getGroups();
-        const onlyGroups = groups.filter(g => g.type !== 'channel' && !g.id.toString().startsWith('-100'));
+        const onlyGroups = groups.filter(g => g.type === 'group' || g.type === 'supergroup');
         if (onlyGroups.length > 0) targetIds.push(...onlyGroups.map(g => g.id));
     }
 
@@ -6056,7 +6056,7 @@ app.post('/api/admin/broadcast', async (req, res) => {
             targetIds.push(mainChannelId);
         } else {
             const groups = db.getGroups();
-            const onlyChannels = groups.filter(g => g.type === 'channel' || g.id.toString().startsWith('-100'));
+            const onlyChannels = groups.filter(g => g.type === 'channel');
             if (onlyChannels.length > 0) targetIds.push(...onlyChannels.map(g => g.id));
         }
     }

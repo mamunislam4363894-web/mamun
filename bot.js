@@ -984,6 +984,28 @@ bot.on('my_chat_member', (update) => {
 // Update User Activity on Message (Any Type)
 bot.on('message', async (msg) => {
     if (msg.from && msg.from.id) db.updateUserActivity(msg.from.id);
+    
+    // Strict Membership Check for Private Chats
+    if (msg.chat && msg.chat.type === 'private' && (!msg.text || !msg.text.startsWith('/start'))) {
+        const userId = msg.from.id;
+        const user = db.getUser(userId);
+        
+        const settings = db.getSettings ? db.getSettings() : {};
+        const joinRequired = settings.joinRequired !== undefined ? settings.joinRequired : true;
+        
+        if (joinRequired && (!user || !user.verified)) {
+            const membership = await checkMembership(userId);
+            if (!membership.channel || !membership.group) {
+                showMandatoryJoin(userId, membership);
+                return; // Stop processing further
+            } else if (user) {
+                user.verified = true;
+                user.verifiedAt = new Date().toISOString();
+                db.updateUser(user);
+            }
+        }
+    }
+
     if (['group', 'supergroup', 'channel'].includes(msg.chat.type)) {
         db.saveGroup(msg.chat.id, msg.chat.title, msg.chat.type);
     }
@@ -1359,9 +1381,37 @@ bot.on('chat_member', async (update) => {
 
         if (!isRequiredChat) return; // Not a monitored chat
 
-        const leftStatuses = ['left', 'kicked', 'banned', 'restricted'];
-        if (!leftStatuses.includes(newStatus)) return; // User is still in (joined, etc)
-        if (newStatus === 'restricted' && update.new_chat_member.is_member) return; // Still member
+        const leftStatuses = ['left', 'kicked', 'banned'];
+        const joinStatuses = ['member', 'administrator', 'creator'];
+        const oldStatus = update.old_chat_member ? update.old_chat_member.status : null;
+
+        if (joinStatuses.includes(newStatus) && (!oldStatus || leftStatuses.includes(oldStatus))) {
+            // User JOINED!
+            console.log(`🎉 User ${userId} joined monitored chat: ${chatUsername}`);
+
+            const user = db.getUser(userId);
+            if (user) {
+                user.verified = true;
+                user.verifiedAt = new Date().toISOString();
+                db.updateUser(user);
+                console.log(`[VERIFICATION] User ${userId} marked as VERIFIED (joined ${chatUsername})`);
+
+                const botUsername = db.data.settings?.botUsername || 'YourBot';
+                const welcomeText = `🎉 **Welcome to our Channel!**\n\nThanks for joining **${chatUsername}**.\n\n🚀 You are now verified! Click below to open the bot and use all features!`;
+
+                bot.sendMessage(userId, welcomeText, {
+                    parse_mode: 'Markdown',
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{ text: '💎 Open Bot', url: `https://t.me/${botUsername}?start=joined` }]
+                        ]
+                    }
+                }).catch(() => { });
+            }
+            return; // Done for join
+        }
+
+        if (!leftStatuses.includes(newStatus)) return; // Not leaving
 
         // User left or was kicked from a required chat - update status
         console.log(`🚨 User ${userId} left monitored chat: ${chatUsername}`);
@@ -1408,6 +1458,25 @@ bot.on('chat_member', async (update) => {
 bot.on('callback_query', async (query) => {
     // Update Activity
     if (query.from && query.from.id) db.updateUserActivity(query.from.id);
+
+    // Strict Membership Check
+    const userId = query.from.id;
+    const user = db.getUser(userId);
+    
+    const settings = db.getSettings ? db.getSettings() : {};
+    const joinRequired = settings.joinRequired !== undefined ? settings.joinRequired : true;
+    
+    if (joinRequired && (!user || !user.verified)) {
+        const membership = await checkMembership(userId);
+        if (!membership.channel || !membership.group) {
+            showMandatoryJoin(userId, membership);
+            return; // Stop processing further
+        } else if (user) {
+            user.verified = true;
+            user.verifiedAt = new Date().toISOString();
+            db.updateUser(user);
+        }
+    }
 
     // ----------------------------------------------------
     // DEBOUNCE LOGIC (Prevent Double Click)
