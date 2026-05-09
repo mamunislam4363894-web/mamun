@@ -6148,6 +6148,8 @@ async function confirmRenewCustomEmail() {
                 addrEl.style.opacity = '1';
             }
             renderBalances();
+            // Reload active emails to update the UI box
+            loadPremiumEmailsFromAdmin();
 
             // Update balance and start polling
             if (data.newBalance !== undefined) {
