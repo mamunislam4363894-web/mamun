@@ -3487,9 +3487,20 @@ app.get('/api/premium-emails/inbox', async (req, res) => {
             snippet: (m.snippet || m.body || '').substring(0, 100)
         }));
 
+        // De-duplicate messages based on From, Subject and Snippet
+        const uniqueMessages = [];
+        const seen = new Set();
+        for (const msg of formatted) {
+            const key = `${msg.from}_${msg.subject}_${msg.snippet}`;
+            if (!seen.has(key)) {
+                seen.add(key);
+                uniqueMessages.push(msg);
+            }
+        }
+
         res.json({
             success: true,
-            messages: formatted,
+            messages: uniqueMessages,
             email: targetEmail
         });
     } catch (e) {
@@ -4498,10 +4509,13 @@ app.get('/api/admin/stats', async (req, res) => {
         Object.values(db.data.vpnAccounts).forEach(arr => totalVpns += (arr ? arr.length : 0));
     }
 
-    // Sum all Cards
+    // Sum all Cards (Only for existing services)
     let totalCards = 0;
-    if (db.data.cards) {
-        Object.values(db.data.cards).forEach(arr => totalCards += (arr ? arr.length : 0));
+    if (db.data.cards && db.data.services) {
+        Object.keys(db.data.services).forEach(serviceId => {
+            const arr = db.data.cards[serviceId];
+            totalCards += (arr ? arr.length : 0);
+        });
     }
 
     // Count ALL Emails from Pool (Enhanced to include all categories)
@@ -6096,7 +6110,7 @@ app.post('/api/admin/mass-gift', async (req, res) => {
         let affected = 0;
         const giftId = 'gift_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
 
-        users.forEach(user => {
+        for (const user of users) {
             // DO NOT apply balances directly! User must claim it.
 
             // Create a pending gift
@@ -6128,10 +6142,9 @@ app.post('/api/admin/mass-gift', async (req, res) => {
                 read: false
             });
 
+            await db.updateUser(user);
             affected++;
-        });
-
-        db.save();
+        }
         res.json({ success: true, affectedUsers: affected });
     } catch (e) {
         console.error('[MASS_GIFT]', e);
@@ -6149,6 +6162,59 @@ app.get('/api/admin/broadcasts', (req, res) => {
     } catch (e) {
         console.error('[BROADCAST] Error loading history:', e);
         res.json({ success: false, broadcasts: [], message: e.message });
+    }
+});
+
+// API: Admin - Delete Broadcast
+app.delete('/api/admin/broadcasts/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const broadcasts = db.data.broadcasts || [];
+        const index = broadcasts.findIndex(b => b.id === id);
+        
+        if (index === -1) {
+            return res.json({ success: false, message: 'Broadcast not found' });
+        }
+        
+        const broadcast = broadcasts[index];
+        
+        // Delete from Telegram if messages tracked
+        if (broadcast.telegramMessages && Array.isArray(broadcast.telegramMessages)) {
+            const TelegramBot = require('node-telegram-bot-api');
+            const config = require('../config');
+            const botToken = config.TELEGRAM_BOT_TOKEN;
+            
+            let activeBot = bot;
+            if (!activeBot && botToken) {
+                try {
+                    activeBot = new TelegramBot(botToken, { polling: false });
+                } catch (e) {
+                    console.error('[BROADCAST_DELETE] Failed to create bot:', e.message);
+                }
+            }
+            
+            if (activeBot) {
+                for (const msg of broadcast.telegramMessages) {
+                    try {
+                        await activeBot.deleteMessage(msg.chatId, msg.messageId);
+                        console.log(`[BROADCAST_DELETE] Deleted message ${msg.messageId} from ${msg.chatId}`);
+                    } catch (e) {
+                        console.error(`[BROADCAST_DELETE] Failed to delete from ${msg.chatId}:`, e.message);
+                        // Ignore failure (message might be too old or bot kicked)
+                    }
+                }
+            }
+        }
+        
+        // Remove from history
+        broadcasts.splice(index, 1);
+        db.data.broadcasts = broadcasts;
+        db.save();
+        
+        res.json({ success: true, message: 'Broadcast deleted from history and Telegram (if possible)' });
+    } catch (e) {
+        console.error('[BROADCAST_DELETE] Error:', e);
+        res.json({ success: false, message: 'Server error: ' + e.message });
     }
 });
 
@@ -6267,7 +6333,15 @@ app.post('/api/admin/broadcast', async (req, res) => {
     // Unique IDs only
     targetIds = [...new Set(targetIds)];
 
-    if (targetIds.length === 0 && normalizedTarget !== 'web') return res.json({ success: false, message: 'No targets found' });
+    if (targetIds.length === 0 && normalizedTarget !== 'web') {
+        let msg = 'No targets found';
+        if (normalizedTarget === 'channels') {
+            msg = 'No channels found. Please add a channel in Group Management or set a required channel in API Management.';
+        } else if (normalizedTarget === 'groups') {
+            msg = 'No groups found. Please add a group in Group Management.';
+        }
+        return res.json({ success: false, message: msg });
+    }
 
     // Prepare Keyboard
     let reply_markup = undefined;
@@ -6359,6 +6433,8 @@ app.post('/api/admin/broadcast', async (req, res) => {
 
         console.log(`[BROADCAST] Starting broadcast to ${targetIds.length} targets`);
 
+        const telegramMessages = [];
+
         for (const chatId of targetIds) {
             try {
                 console.log(`[BROADCAST] Sending to ${chatId}...`);
@@ -6372,6 +6448,10 @@ app.post('/api/admin/broadcast', async (req, res) => {
                     sentMsg = await activeBot.sendMessage(chatId, message || 'Broadcast', { reply_markup });
                 }
                 successCount++;
+
+                if (sentMsg) {
+                    telegramMessages.push({ chatId, messageId: sentMsg.message_id });
+                }
 
                 // Track message if sent by helper admin
                 if (isHelper && sentMsg) {
@@ -6415,6 +6495,20 @@ app.post('/api/admin/broadcast', async (req, res) => {
         }
 
         console.log(`[BROADCAST] Complete: ${successCount} sent, ${failCount} failed out of ${targetIds.length}`);
+        
+        // Save to broadcast history
+        if (!db.data.broadcasts) db.data.broadcasts = [];
+        db.data.broadcasts.push({
+            id: Date.now().toString(),
+            message,
+            mediaType,
+            mediaUrl,
+            target: normalizedTarget,
+            sent: successCount,
+            failed: failCount,
+            createdAt: Date.now(),
+            telegramMessages: telegramMessages
+        });
         
         // Save any web notification updates
         db.save();

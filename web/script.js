@@ -707,7 +707,7 @@ function showPage(targetId) {
         } else {
             targetPage.style.display = 'block';
         }
-        setTimeout(() => targetPage.classList.add('active'), 20);
+        targetPage.classList.add('active');
 
         // Restore scroll position (so Back keeps you at the same place)
         const mainScroll = document.getElementById('mainScroll');
@@ -1779,7 +1779,7 @@ function startTask(button, taskId, url, reward) {
 }
 
 // Complete task and claim reward
-async function completeTask(taskId, reward, button) {
+async function completeTask(taskId, reward, button, url) {
     try {
         if (!button) return;
         button.disabled = true;
@@ -1831,13 +1831,21 @@ async function completeTask(taskId, reward, button) {
         } else {
             showToast(data.message || 'Verification failed');
             button.disabled = false;
-            button.textContent = 'VERIFY';
+            button.textContent = 'START';
+            button.style.background = ''; // reset to default
+            button.onclick = function() {
+                startTask(button, taskId, url, reward);
+            };
         }
     } catch (e) {
         console.error('Error completing task:', e);
         if (button) {
             button.disabled = false;
-            button.textContent = 'VERIFY';
+            button.textContent = 'START';
+            button.style.background = ''; // reset to default
+            button.onclick = function() {
+                startTask(button, taskId, url, reward);
+            };
         }
         showToast('Network error verifying task');
     }
@@ -2354,10 +2362,25 @@ async function claimAdReward() {
                 activeTaskButton.style.background = '#22c55e';
                 activeTaskButton.style.display = 'block';
                 activeTaskButton.disabled = false;
+                
+                const currentTaskData = { ...activeTaskData }; // copy data
+                const currentBtn = activeTaskButton;
+                
                 activeTaskButton.onclick = function () {
-                    completeTask(activeTaskData.taskId, activeTaskData.reward, activeTaskButton);
-                    window.open(activeTaskData.url, '_blank');
+                    completeTask(currentTaskData.taskId, currentTaskData.reward, currentBtn, currentTaskData.url);
+                    window.open(currentTaskData.url, '_blank');
                 };
+
+                // Timer to reset to START after 1 minute if not completed
+                setTimeout(() => {
+                    if (currentBtn.textContent === 'VERIFY') {
+                        currentBtn.textContent = 'START';
+                        currentBtn.style.background = ''; // reset to default
+                        currentBtn.onclick = function() {
+                            startTask(currentBtn, currentTaskData.taskId, currentTaskData.url, currentTaskData.reward);
+                        };
+                    }
+                }, 60000); // 1 minute
             } else if (currentAdContext === 'gift_claim' && pendingGiftId) {
                 // Gift Ad Completed - Now claim the gift
                 claimGiftReward(pendingGiftId);
@@ -6285,6 +6308,21 @@ function refreshInbox(type) {
         });
 }
 
+function getTimeAgo(isoString) {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
+}
+
 function renderInbox(emails, type, serverMsg = null) {
     const listEl = document.getElementById(type + "InboxList");
     const otpListEl = document.getElementById(type + "OtpList");
@@ -6355,7 +6393,7 @@ function renderInbox(emails, type, serverMsg = null) {
             <div class="ii-body" style="flex:1; min-width:0;">
                 <div class="ii-top" style="margin-bottom:2px; display:flex; justify-content:space-between; align-items:center;">
                     <div class="ii-sender" style="font-weight:800; color:#fff; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0; padding-right:10px;">${email.from || email.sender || 'Unknown'}</div>
-                    <div class="ii-time" style="font-size:10px; opacity:0.6; flex-shrink:0;">${email.time || ''}</div>
+                    <div class="ii-time" style="font-size:10px; opacity:0.6; flex-shrink:0;">${email.time || getTimeAgo(email.date) || ''}</div>
                 </div>
                 <div class="ii-subject" style="font-size:11px; color:var(--text-sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0;">${email.subject}</div>
             </div>
