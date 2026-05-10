@@ -1099,6 +1099,27 @@ app.get('/api/crypto-coins', (req, res) => {
     }
 });
 
+// API: Fast Sync user data for polling
+app.get('/api/user/sync/:userId', async (req, res) => {
+    const userId = req.params.userId;
+    const user = await db.getUser(userId);
+    if (!user) return res.json({ success: false, message: 'User not found' });
+    
+    const tokenBalance = db.getTokenBalance(user);
+    
+    res.json({
+        success: true,
+        tokens: tokenBalance,
+        Gems: user.Gems || 0,
+        usd: user.usd || 0,
+        verified: user.verified || false,
+        adminVerified: user.adminVerified || false,
+        apiStatus: user.apiStatus || 'allow',
+        apiKey: user.apiKey || '',
+        completedTasks: user.completedTasks || []
+    });
+});
+
 // API: Register / Sync user from Telegram WebApp
 app.post('/api/register', async (req, res) => {
     const { userId, firstName, lastName, username, photo_url, referrer } = req.body;
@@ -2882,14 +2903,25 @@ app.get('/api/number/otp', async (req, res) => {
             try {
                 const apiURL = manualNum.otpApi.replace('{number}', manualNum.number);
                 const response = await axios.get(apiURL, { timeout: 5000 });
+                const data = response.data;
                 let otp = null;
 
-                // Simple heuristic for OTP extraction from response
-                // If it's CSV or text, try to find a 4-6 digit number
-                const content = typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
-                const match = content.match(/\d{4,6}/);
-                if (match) {
-                    otp = match[0];
+                if (typeof data === 'object' && data !== null) {
+                    // Try common field names if it's JSON
+                    otp = data.otp || data.code || data.otp_code || data.pin;
+                    if (otp) otp = String(otp);
+                }
+
+                if (!otp) {
+                    // Fallback to regex extraction
+                    const content = typeof data === 'string' ? data : JSON.stringify(data);
+                    const match = content.match(/\b\d{4,6}\b/); // Added word boundaries to avoid matching long numbers like IDs
+                    if (match) {
+                        otp = match[0];
+                    }
+                }
+
+                if (otp) {
                     session.otp = otp;
                     manualNum.otp = otp;
                     manualNum.status = 'finished';

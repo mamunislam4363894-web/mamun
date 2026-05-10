@@ -3511,21 +3511,27 @@ async function registerAndFetchUser() {
     }
 
     try {
-        const res = await fetch('/api/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                userId: userData.id,
-                firstName: _tgUser.first_name || '',
-                lastName: _tgUser.last_name || '',
-                username: _tgUser.username || '',
-                photo_url: _tgUser.photo_url || '',
-                referrer: referrer
-            })
-        });
+        let res;
+        if (window._isRegistered) {
+            res = await fetch(`/api/user/sync/${userData.id}`);
+        } else {
+            res = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: userData.id,
+                    firstName: _tgUser.first_name || '',
+                    lastName: _tgUser.last_name || '',
+                    username: _tgUser.username || '',
+                    photo_url: _tgUser.photo_url || '',
+                    referrer: referrer
+                })
+            });
+        }
         const data = await res.json();
 
         if (data.success) {
+            window._isRegistered = true; // Mark as registered after first success
             // Sync from server
             userData.tokens = data.tokens || data.balance_tokens || 0;
             userData.Gems = data.Gems || data.gems || 0;
@@ -6135,7 +6141,7 @@ async function confirmRenewCustomEmail() {
             mailSessions[type] = {
                 email: newEmail,
                 id: data.sessionId || (mailSessions[type]?.id),
-                type: type,
+                type: currentPremiumTab || (type === 'premium' ? 'gmail' : type),
                 sessionId: data.sessionId || (mailSessions[type]?.sessionId)
             };
 
