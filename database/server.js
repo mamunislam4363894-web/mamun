@@ -6094,31 +6094,23 @@ app.post('/api/admin/mass-gift', async (req, res) => {
 
         const users = await db.getUsers();
         let affected = 0;
+        const giftId = 'gift_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
 
         users.forEach(user => {
-            // Apply balances
-            if (asset === 'tokens') {
-                user.balance_tokens = (user.balance_tokens || 0) + amount;
-                user.tokens = user.balance_tokens; // keep in sync
-            } else if (asset === 'gems') {
-                user.balance_Gems = (user.balance_Gems || 0) + amount;
-                user.Gems = user.balance_Gems; // keep in sync
-            } else if (asset === 'usd') {
-                user.usd = parseFloat(((Math.max(0, user.usd || 0)) + amount).toFixed(3));
-            }
+            // DO NOT apply balances directly! User must claim it.
 
-            // Create history entry
-            if (!user.history) user.history = [];
-            user.history.unshift({
-                type: 'bonus',
-                currency: asset,
+            // Create a pending gift
+            if (!user.pendingGifts) user.pendingGifts = [];
+            user.pendingGifts.push({
+                id: giftId,
+                currency: asset === 'tokens' ? 'tokens' : (asset === 'gems' ? 'Gems' : 'usd'),
                 amount: amount,
-                date: Date.now(),
-                note: 'Admin Mass Gift'
+                claimed: false,
+                date: Date.now()
             });
 
-            // Create a notification/message 
-            if (!user.supportMessages) user.supportMessages = [];
+            // Create a notification
+            if (!user.notifications) user.notifications = [];
             
             const assetLabel = asset === 'tokens' ? 'TC' : (asset === 'usd' ? '$' : 'Gems');
             const amtStr = asset === 'usd' ? amount.toFixed(3) : amount;
@@ -6126,9 +6118,12 @@ app.post('/api/admin/mass-gift', async (req, res) => {
             finalMsg = finalMsg.replace(/\{AMOUNT\}/g, asset === 'usd' ? '$' + amtStr : amtStr)
                                .replace(/\{ASSET\}/g, assetLabel);
 
-            user.supportMessages.push({
-                from: 'Admin',
+            user.notifications.unshift({
+                id: 'notif_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                type: 'gift',
+                title: 'Admin Gift',
                 message: finalMsg,
+                giftId: giftId,
                 date: Date.now(),
                 read: false
             });
