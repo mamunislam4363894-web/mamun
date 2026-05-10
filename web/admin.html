@@ -15,6 +15,16 @@
                 console.warn('Network issue caught:', event.reason);
             }
         });
+
+        // Override fetch to handle Live Server (port 5501)
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options) {
+            if (typeof url === 'string' && url.startsWith('/api/admin')) {
+                const API_BASE = window.location.port === '5501' ? 'http://localhost:3000' : '';
+                url = API_BASE + url;
+            }
+            return originalFetch(url, options);
+        };
     </script>
 
     <script src="https://cdn.tailwindcss.com" crossorigin="anonymous"></script>
