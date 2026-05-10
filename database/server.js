@@ -4053,16 +4053,25 @@ app.post('/api/exchange/convert', (req, res) => {
     if (to === 'tokens') db.setTokenBalance(user, db.getTokenBalance(user) + amountAfterFee);
     else user[toField] = Math.max(0, (user[toField] || 0) + amountAfterFee);
 
-    // History record
+    // History record (Two transactions for minus and plus)
     if (!user.history) user.history = [];
+    
+    // 1. Transaction for Deduction (-)
     user.history.unshift({
         type: 'exchange',
-        from, to,
-        fromAmount: amt,
-        toAmount: amountAfterFee,
-        fee: exchangeFee,
-        feePercent: exchangeFeePercent,
-        date: Date.now()
+        amount: -amt,
+        currency: from === 'tokens' ? 'TC' : (from === 'Gems' ? 'Gems' : from.toUpperCase()),
+        date: Date.now(),
+        detail: `Exchanged ${amt} ${from.toUpperCase()} to ${to.toUpperCase()}`
+    });
+    
+    // 2. Transaction for Addition (+)
+    user.history.unshift({
+        type: 'exchange',
+        amount: amountAfterFee,
+        currency: to === 'tokens' ? 'TC' : (to === 'Gems' ? 'Gems' : to.toUpperCase()),
+        date: Date.now(),
+        detail: `Received from ${from.toUpperCase()} exchange`
     });
 
     saveUsersObj(users);

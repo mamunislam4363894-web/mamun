@@ -7088,9 +7088,9 @@
                     return `
             <tr>
                 <td class="font-mono text-orange-400">${c.code}</td>
-                <td>${c.amount}</td>
-                <td>${used}</td>
-                <td>${remaining}</td>
+                <td>${typeof formatCompact === 'function' ? formatCompact(c.amount) : c.amount}</td>
+                <td>${typeof formatCompact === 'function' ? formatCompact(used) : used}</td>
+                <td>${typeof formatCompact === 'function' ? formatCompact(remaining) : remaining}</td>
                 <td><button onclick="deleteCode('${c.code}')" class="text-red-400 hover:text-red-300"><i
                             class="fas fa-trash"></i></button></td>
             </tr>`;

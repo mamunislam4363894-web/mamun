@@ -2357,9 +2357,9 @@ async function claimAdReward() {
                 showPage('scratch');
                 initScratchCard();
             } else if (currentAdContext === 'task_verification' && activeTaskButton) {
-                // Task Ad Completed - Now show VERIFY button
-                activeTaskButton.textContent = 'VERIFY';
-                activeTaskButton.style.background = '#22c55e';
+                // Task Ad Completed - Now show OPEN LINK button
+                activeTaskButton.textContent = 'OPEN LINK';
+                activeTaskButton.style.background = '#2563eb';
                 activeTaskButton.style.display = 'block';
                 activeTaskButton.disabled = false;
                 
@@ -2367,8 +2367,16 @@ async function claimAdReward() {
                 const currentBtn = activeTaskButton;
                 
                 activeTaskButton.onclick = function () {
-                    completeTask(currentTaskData.taskId, currentTaskData.reward, currentBtn, currentTaskData.url);
                     window.open(currentTaskData.url, '_blank');
+                    
+                    // Now change to VERIFY
+                    currentBtn.textContent = 'VERIFY';
+                    currentBtn.style.background = '#22c55e';
+                    
+                    // Update onclick to verify
+                    currentBtn.onclick = function () {
+                        completeTask(currentTaskData.taskId, currentTaskData.reward, currentBtn, currentTaskData.url);
+                    };
                 };
 
                 // Timer to reset to START after 1 minute if not completed
@@ -3817,7 +3825,7 @@ function renderRecentActivity(history) {
 
     const typeConfig = {
         'apikey_generate': { icon: 'fas fa-key', color: '#9333ea', name: 'API Key Generated' },
-        'apikey_cost': { icon: 'fas fa-gem', color: '#ec4899', name: 'API Key Cost' },
+        'apikey_cost': { icon: 'fas fa-key', color: '#ec4899', name: 'API Key Cost' },
         'ad_reward': { icon: 'fas fa-play', color: '#f59e0b', name: 'Watch and Earn' },
         'mission_reward': { icon: 'fas fa-check-circle', color: '#22c55e', name: 'Task Completed' },
         'account_purchase': { icon: 'fas fa-shopping-cart', color: '#3b82f6', name: 'Account Purchase' },
@@ -7844,6 +7852,27 @@ function generateTOTP(secretBase32) {
 }
 
 function start2faLive() {
+    const startBtn = document.getElementById('twofa-start-btn');
+    
+    // Toggle STOP functionality if already running
+    if (_twofaInterval) {
+        clearInterval(_twofaInterval);
+        _twofaInterval = null;
+        
+        if (startBtn) {
+            startBtn.innerHTML = '<i class="fas fa-play"></i> START';
+            startBtn.style.background = 'linear-gradient(135deg,#4f46e5,#7c3aed)';
+        }
+        
+        const result = document.getElementById('twofa-result');
+        const timer  = document.getElementById('twofa-timer');
+        if (result) result.textContent = '------';
+        if (timer)  timer.textContent  = 'Waiting...';
+        
+        window.showToast('🛑 2FA service stopped.');
+        return;
+    }
+    
     const input = document.getElementById('twofa-input');
     const secret = input ? input.value.trim() : '';
     if (!secret) {
@@ -7851,34 +7880,29 @@ function start2faLive() {
         return;
     }
 
-    clearInterval(_twofaInterval);
     updateTwoFA(secret);
-
     _twofaInterval = setInterval(() => updateTwoFA(secret), 1000);
 
-    // Update button states
-    const startBtn = document.getElementById('twofa-start-btn');
+    // Update button states to STOP
     if (startBtn) {
-        startBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> RUNNING';
-        startBtn.style.background = 'linear-gradient(135deg,#059669,#10b981)';
+        startBtn.innerHTML = '<i class="fas fa-stop"></i> STOP';
+        startBtn.style.background = 'linear-gradient(135deg,#dc2626,#ef4444)'; // Red for Stop
     }
+    window.showToast('🚀 2FA service started.');
 }
 
-function restart2faLive() {
-    clearInterval(_twofaInterval);
-    _twofaInterval = null;
-
+function copy2faCode() {
     const result = document.getElementById('twofa-result');
-    const timer  = document.getElementById('twofa-timer');
-    if (result) result.textContent = '------';
-    if (timer)  timer.textContent  = 'Waiting...';
-
-    const startBtn = document.getElementById('twofa-start-btn');
-    if (startBtn) {
-        startBtn.innerHTML = '<i class="fas fa-play"></i> START';
-        startBtn.style.background = 'linear-gradient(135deg,#4f46e5,#7c3aed)';
+    const code = result ? result.textContent.trim() : '';
+    if (code && code !== '------' && code !== 'ERROR') {
+        navigator.clipboard.writeText(code).then(() => {
+            window.showToast('📋 Code copied to clipboard!');
+        }).catch(() => {
+            window.showToast('❌ Failed to copy!');
+        });
+    } else {
+        window.showToast('⚠️ No code to copy!');
     }
-    window.showToast('🔄 Reset! Enter key and press START.');
 }
 
 function updateTwoFA(secret) {
@@ -7899,7 +7923,7 @@ function updateTwoFA(secret) {
 }
 
 window.start2faLive   = start2faLive;
-window.restart2faLive = restart2faLive;
+window.copy2faCode    = copy2faCode;
 
 
 function copyOtpFromChip(btn, code) {

@@ -2149,23 +2149,23 @@
                         <div style="font-size:11px;font-weight:700;color:var(--text-sub);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">
                             <i class="fas fa-key" style="margin-right:6px;color:#7c3aed;"></i>Live OTP Code
                         </div>
-                        <div id="twofa-result" style="font-size:34px;font-weight:900;color:#7c3aed;text-align:center;letter-spacing:8px;padding:10px 0;">
+                        <div id="twofa-result" onclick="copy2faCode()" style="font-size:34px;font-weight:900;color:#7c3aed;text-align:center;letter-spacing:8px;padding:10px 0;cursor:pointer;">
                             ------
                         </div>
                         <div id="twofa-timer" style="text-align:center;font-size:11px;color:var(--text-sub);margin-top:4px;">Waiting...</div>
                     </div>
 
-                    <!-- START & RESTART Buttons -->
+                    <!-- START & COPY Buttons -->
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                         <button id="twofa-start-btn" onclick="start2faLive()"
                             style="height:50px;background:linear-gradient(135deg,#4f46e5,#7c3aed);border:none;border-radius:16px;color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;box-shadow:0 6px 20px rgba(79,70,229,0.35);transition:opacity 0.2s;"
                             onmousedown="this.style.opacity='0.8'" onmouseup="this.style.opacity='1'">
                             <i class="fas fa-play"></i> START
                         </button>
-                        <button id="twofa-restart-btn" onclick="restart2faLive()"
+                        <button id="twofa-restart-btn" onclick="copy2faCode()"
                             style="height:50px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.35);border-radius:16px;color:#a78bfa;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:opacity 0.2s;"
                             onmousedown="this.style.opacity='0.7'" onmouseup="this.style.opacity='1'">
-                            <i class="fas fa-redo"></i> RESTART
+                            <i class="fas fa-copy"></i> COPY
                         </button>
                     </div>
                 </div>
