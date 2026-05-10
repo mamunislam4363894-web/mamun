@@ -1482,7 +1482,6 @@ bot.on('callback_query', async (query) => {
     // DEBOUNCE LOGIC (Prevent Double Click)
     // ----------------------------------------------------
 
-    const userId = query.from.id;
     const now = Date.now();
     const lastTime = callbackThrottle.get(userId) || 0;
 
