@@ -4532,11 +4532,7 @@ app.get('/api/admin/stats', async (req, res) => {
     }
 
     let gmailsUsed = 0;
-    // Count total unique mail sessions that have been generated
-    if (db.data.mailSessions) {
-        gmailsUsed = Object.keys(db.data.mailSessions).length;
-    }
-    // Also include history records to account for cleared sessions
+    // Count total unique mail sessions that have been generated from history
     usersList.forEach(u => {
         if (u.history) {
             u.history.forEach(h => {
@@ -5732,18 +5728,7 @@ app.get('/api/admin/stats', async (req, res) => {
     }
 });
 
-// API: Admin - Metrics
-app.get('/api/admin/metrics', (req, res) => {
-    res.json({
-        success: true,
-        metrics: {
-            cpu: 0,
-            memory: 0,
-            disk: 0,
-            uptime: process.uptime()
-        }
-    });
-});
+
 
 // API: Admin - Provider Management
 app.get('/api/admin/providers', (req, res) => {

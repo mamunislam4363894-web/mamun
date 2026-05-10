@@ -1736,8 +1736,8 @@
                             <tr>
                                 <th>Code</th>
                                 <th>Amount</th>
-                                <th>Used</th>
                                 <th>Remaining</th>
+                                <th>Available</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -9250,7 +9250,7 @@
             }
 
             tbody.innerHTML = groups.map(g => {
-                const isChannel = g.type === 'channel' || g.id.toString().startsWith('-100');
+                const isChannel = g.type === 'channel';
                 const typeIcon = isChannel ? '<i class="fas fa-broadcast-tower text-green-400"></i>'
                     : '<i class="fas fa-users text-blue-400"></i>';
                 const typeLabel = isChannel ? 'Channel' : 'Group';
@@ -9287,27 +9287,26 @@
 
         function updateGroupStats(groups) {
             const total = groups.length;
-            const channels = groups.filter(g => g.type === 'channel' ||
-                g.id.toString().startsWith('-100')).length;
-            const totalMembers = groups.reduce((acc, g) => acc + (parseInt(g.memberCount) || 0),
-                0);
-            const activeToday = groups.filter(g => g.lastActivity && (Date.now() -
-                g.lastActivity) < 24 * 60 * 60 * 1000).length; document.getElementById('group-total').textContent = total;
+            const channels = groups.filter(g => g.type === 'channel').length;
+            const totalMembers = groups.reduce((acc, g) => acc + (parseInt(g.memberCount) || 0), 0);
+            const activeToday = groups.filter(g => g.lastActivity && (Date.now() - g.lastActivity) < 24 * 60 * 60 * 1000).length; 
+            
+            document.getElementById('group-total').textContent = total;
             document.getElementById('channel-total').textContent = channels;
             document.getElementById('group-members').textContent = totalMembers.toLocaleString();
             document.getElementById('group-active').textContent = activeToday;
-        } function filterGroups(type) {
-            if
-                (type === 'all') { renderGroupsTable(allGroupsData); } else if (type === 'channel') {
-                    const
-                        channels = allGroupsData.filter(g => g.type ===
-                            'channel' || g.id.toString().startsWith('-100'));
-                    renderGroupsTable(channels);
-                } else if (type === 'group') {
-                    const groups = allGroupsData.filter(g => g.type !== 'channel' &&
-                        !g.id.toString().startsWith('-100'));
-                    renderGroupsTable(groups);
-                }
+        } 
+
+        function filterGroups(type) {
+            if (type === 'all') { 
+                renderGroupsTable(allGroupsData); 
+            } else if (type === 'channel') {
+                const channels = allGroupsData.filter(g => g.type === 'channel');
+                renderGroupsTable(channels);
+            } else if (type === 'group') {
+                const groups = allGroupsData.filter(g => g.type !== 'channel');
+                renderGroupsTable(groups);
+            }
         }
 
         function renderGroupSettings(settings) {
@@ -10305,29 +10304,34 @@
                     </tr>
                     `).join('');
 
-            // Calculate top referrers from user data
-            const allUsers = Object.values(userData);
-            const referrers = allUsers
-                .filter(u => (u.referralCount || 0) > 0)
-                .map(u => ({
-                    name: u.firstName || u.username || `User ${String(u.id).slice(-4)}`,
-                    refs: u.referralCount || 0,
-                    tokens: u.tokens || 0
-                }))
-                .sort((a, b) => b.refs - a.refs)
-                .slice(0, 10);
-
-            document.getElementById('lbReferrersBody').innerHTML = referrers.map((u, i) => `
-                    <tr class="border-b border-white/5 hover:bg-white/5">
-                        <td class="py-2 px-3 font-bold ${i < 3 ? 'text-yellow-400' : 'text-gray-400'}">
-                            ${i + 1}</td>
-                        <td class="py-2 px-3">${u.name}</td>
-                        <td class="py-2 px-3 text-right font-mono text-yellow-400 font-bold">
-                            ${u.refs}</td>
-                        <td class="py-2 px-3 text-right font-mono text-white">
-                            ${u.tokens.toLocaleString()} TC</td>
-                    </tr>
-                    `).join('') || '<tr> <td colspan = "4" class="text-center py-4 text-gray-500 text-xs" > No referrers yet</td> </tr> ';
+            // Fetch top referrers from API
+            fetch('/api/leaderboard?type=refer')
+                .then(r => r.json())
+                .then(data => {
+                    const tbody = document.getElementById('lbReferrersBody');
+                    if (!tbody) return;
+                    
+                    if (data.success && data.top && data.top.length > 0) {
+                        tbody.innerHTML = data.top.slice(0, 10).map((u, i) => `
+                            <tr class="border-b border-white/5 hover:bg-white/5">
+                                <td class="py-2 px-3 font-bold ${i < 3 ? 'text-yellow-400' : 'text-gray-400'}">
+                                    ${i + 1}</td>
+                                <td class="py-2 px-3">${u.name}</td>
+                                <td class="py-2 px-3 text-right font-mono text-yellow-400 font-bold">
+                                    ${u.score}</td>
+                                <td class="py-2 px-3 text-right font-mono text-white">
+                                    ID: ${String(u.id).slice(-4)}</td>
+                            </tr>
+                        `).join('');
+                    } else {
+                        tbody.innerHTML = '<tr> <td colspan = "4" class="text-center py-4 text-gray-500 text-xs" > No referrers yet</td> </tr> ';
+                    }
+                })
+                .catch(e => {
+                    console.warn('Error loading referrers leaderboard:', e);
+                    const tbody = document.getElementById('lbReferrersBody');
+                    if (tbody) tbody.innerHTML = '<tr> <td colspan = "4" class="text-center py-4 text-red-400 text-xs" > ❌ Error loading data</td> </tr> ';
+                });
         }
 
         // PROVIDERS MANAGEMENT - NEW SYSTEM
