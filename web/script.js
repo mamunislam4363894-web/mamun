@@ -5315,7 +5315,7 @@ function loadNumPlatforms() {
                     btn.innerHTML = `
                         ${badge}
                         <i class="${p.icon}" style="font-size:20px; color:${p.color};"></i>
-                        <span style="font-size:10px; font-weight:700; color:var(--text-main);">${p.name}</span>
+                        <span style="font-size:10px; font-weight:700; color:var(--text-main);">${p.name}${p.availableCount ? ` (${p.availableCount})` : ''}</span>
                     `;
                     list.appendChild(btn);
 

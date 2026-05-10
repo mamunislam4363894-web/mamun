@@ -2704,6 +2704,13 @@ app.get('/api/number/platforms', (req, res) => {
         }
     });
 
+    // Also include platforms from manual numbers
+    if (db.data.manualNumbers) {
+        db.data.manualNumbers.forEach(n => {
+            platformSet.add(n.platform);
+        });
+    }
+
     // Default platforms (strictly filtered to user request)
     const defaultPlatforms = requestedServices;
     if (platformSet.size === 0) {
@@ -2722,14 +2729,22 @@ app.get('/api/number/platforms', (req, res) => {
     };
 
     // Build platforms array with usage stats
-    const platforms = Array.from(platformSet).map(id => ({
-        id,
-        name: platformMeta[id]?.name || id.charAt(0).toUpperCase() + id.slice(1),
-        icon: platformMeta[id]?.icon || 'fas fa-mobile-alt',
-        color: platformMeta[id]?.color || '#f59e0b',
-        usage: stats[id] || 0,
-        countryCodes: platformCountryCodes[id] || ['1'] // Default to US
-    }));
+    const platforms = Array.from(platformSet).map(id => {
+        let availableCount = 0;
+        if (db.data.manualNumbers) {
+            availableCount = db.data.manualNumbers.filter(n => n.platform === id && n.status === 'available').length;
+        }
+
+        return {
+            id,
+            name: platformMeta[id]?.name || id.charAt(0).toUpperCase() + id.slice(1),
+            icon: platformMeta[id]?.icon || 'fas fa-mobile-alt',
+            color: platformMeta[id]?.color || '#f59e0b',
+            usage: stats[id] || 0,
+            availableCount: availableCount,
+            countryCodes: platformCountryCodes[id] || ['1'] // Default to US
+        };
+    });
 
     // Sort by usage (popularity) - descending
     platforms.sort((a, b) => b.usage - a.usage);
