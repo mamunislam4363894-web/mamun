@@ -3317,7 +3317,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- MoneyTag -->
                     <div class="glass-card p-4 md:p-6 rounded-2xl border border-white/10">
                         <div class="flex items-center gap-3 mb-4">
@@ -3650,39 +3650,15 @@
                                 <label class="text-xs text-gray-400 uppercase font-bold block mb-1">SMS
                                     API
                                     URL</label>
-                                <input id="smsApiUrl" type="text" placeholder="https://api.sms-provider.com/send"
+                                <input id="smsApiUrl" type="text" value="http://203.161.58.20:3001/api/functions/agent-api" placeholder="https://api.sms-provider.com/send"
                                     class="w-full bg-black/30 border border-white/10 p-3 rounded-lg text-white">
                             </div>
                             <div class="mb-4">
                                 <label class="text-xs text-gray-400 uppercase font-bold block mb-1">API
                                     Key/Auth
                                     Token</label>
-                                <input id="smsApiKey" type="password" placeholder="Enter your SMS provider API key"
+                                <input id="smsApiKey" type="password" value="sk_80cfe3004fbb25849371126620e193aa4a4ee09e371df1eb8d224acc69bcaf96" placeholder="Enter your SMS provider API key"
                                     class="w-full bg-black/30 border border-white/10 p-3 rounded-lg text-white">
-                            </div>
-                            <div class="mb-4">
-                                <label class="text-xs text-gray-400 uppercase font-bold block mb-1">Account
-                                    SID (if
-                                    required)</label>
-                                <input id="smsAccountSid" type="text"
-                                    placeholder="e.g. ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                                    class="w-full bg-black/30 border border-white/10 p-3 rounded-lg text-white">
-                            </div>
-                            <div class="mb-4">
-                                <label class="text-xs text-gray-400 uppercase font-bold block mb-1">Sender
-                                    Number /
-                                    From</label>
-                                <input id="smsSenderNumber" type="text" placeholder="e.g. +1234567890 or YourBrand"
-                                    class="w-full bg-black/30 border border-white/10 p-3 rounded-lg text-white">
-                            </div>
-                            <div class="mb-4">
-                                <label class="text-xs text-gray-400 uppercase font-bold block mb-1">Supported
-                                    Country
-                                    Codes</label>
-                                <input id="smsCountryCodes" type="text" placeholder="e.g. US, UK, CA, BD, IN"
-                                    class="w-full bg-black/30 border border-white/10 p-3 rounded-lg text-white">
-                                <p class="text-xs text-gray-500 mt-1">Comma-separated country codes
-                                </p>
                             </div>
                             <div class="mb-4">
                                 <label class="text-xs text-gray-400 uppercase font-bold block mb-1">Cost
