@@ -2130,20 +2130,24 @@
                         <div class="flex items-center justify-between mb-6">
                             <h3 class="font-bold flex items-center gap-2"><i
                                     class="fas fa-phone-alt text-orange-400"></i> MANUAL NUMBER POOL</h3>
-                            <button onclick="openAddNumberModal()"
-                                class="gold-gradient text-black px-4 py-2 rounded-xl font-bold text-sm">
-                                <i class="fas fa-plus mr-1"></i> ADD NUMBER
-                            </button>
+                            <div class="flex gap-2">
+                                <button onclick="openLiveSessionsModal()"
+                                    class="bg-blue-500/20 text-blue-400 border border-blue-500/30 px-4 py-2 rounded-xl font-bold text-sm hover:bg-blue-500/30 transition-all">
+                                    <i class="fas fa-bolt mr-1"></i> LIVE SESSIONS
+                                </button>
+                                <button onclick="openAddNumberModal()"
+                                    class="gold-gradient text-black px-4 py-2 rounded-xl font-bold text-sm">
+                                    <i class="fas fa-plus mr-1"></i> ADD NUMBER
+                                </button>
+                            </div>
                         </div>
                         <div class="overflow-x-auto">
                             <table id="manualNumbersTable" class="w-full">
                                 <thead>
                                     <tr class="text-gray-400 text-xs border-b border-white/10">
-                                        <th class="pb-3 text-left">NUMBER</th>
+                                        <th class="pb-3 text-left">AVAILABLE NUMBERS</th>
                                         <th class="pb-3 text-left">PLATFORM</th>
                                         <th class="pb-3 text-left">STATUS</th>
-                                        <th class="pb-3 text-left">OTP</th>
-                                        <th class="pb-3 text-right">ACTION</th>
                                     </tr>
                                 </thead>
                                 <tbody id="manualNumbersBody">
@@ -2193,6 +2197,36 @@
                                 class="w-full mt-4 bg-white/5 border border-white/10 py-3 rounded-xl text-xs font-bold hover:bg-white/10 transition-all">
                                 MANAGE API PROVIDERS
                             </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Sessions Modal -->
+                <div id="liveSessionsModal" class="modal-overlay">
+                    <div class="modal-body glass-card p-6 rounded-2xl max-w-4xl w-full">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="font-bold flex items-center gap-2">
+                                <i class="fas fa-bolt text-blue-400"></i> LIVE SESSIONS
+                            </h3>
+                            <button onclick="closeModal('liveSessionsModal')" class="text-gray-400 hover:text-white">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto max-h-[60vh]">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="text-gray-400 text-xs border-b border-white/10">
+                                        <th class="pb-3 text-left">NUMBER</th>
+                                        <th class="pb-3 text-left">PLATFORM</th>
+                                        <th class="pb-3 text-left">STATUS</th>
+                                        <th class="pb-3 text-left">OTP</th>
+                                        <th class="pb-3 text-right">ACTION</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="liveSessionsBody">
+                                    <!-- Rows will be loaded dynamically -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -11597,7 +11631,7 @@
                 if (!body) return;
 
                 if (data.numbers.length === 0) {
-                    body.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-gray-500">No manual numbers added yet</td></tr>';
+                    body.innerHTML = '<tr><td colspan="3" class="text-center py-8 text-gray-500">No manual numbers added yet</td></tr>';
                     document.getElementById('stats-total-numbers').textContent = '0';
                     document.getElementById('stats-available-numbers').textContent = '0';
                     return;
@@ -11606,33 +11640,29 @@
                 document.getElementById('stats-total-numbers').textContent = data.numbers.length;
                 document.getElementById('stats-available-numbers').textContent = data.numbers.filter(n => n.status === 'available').length;
 
-                body.innerHTML = data.numbers.map(n => `
-                                    <tr class="border-b border-white/5 hover:bg-white/5 transition-all">
-                                        <td class="py-4 font-bold text-white">${n.number}</td>
-                                        <td class="py-4 font-medium text-gray-400">
-                                            <div class="flex flex-col">
-                                                <span class="capitalize text-white">${n.platform}</span>
-                                                <span class="text-[10px] text-gray-500 uppercase font-bold">Code: ${n.countryCode || 'N/A'}</span>
-                                            </div>
-                                        </td>
-                                        <td class="py-4">
-                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${n.status === 'available' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}">
-                                                ${n.status.toUpperCase()}
-                                            </span>
-                                        </td>
-                                        <td class="py-4">
-                                            <div class="flex items-center gap-2">
-                                                <span class="font-mono text-orange-400 font-bold">${n.otp || '---'}</span>
-                                                <button onclick="openOtpModal('${n.id}')" class="text-xs text-blue-400 hover:underline">Edit</button>
-                                            </div>
-                                        </td>
-                                        <td class="py-4 text-right">
-                                            <button onclick="deleteManualNumber('${n.id}')" class="w-8 h-8 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all flex items-center justify-center ml-auto">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                `).join('');
+                // Group by platform
+                const groups = {};
+                data.numbers.forEach(n => {
+                    if (!groups[n.platform]) {
+                        groups[n.platform] = { platform: n.platform, count: 0, total: 0 };
+                    }
+                    groups[n.platform].total++;
+                    if (n.status === 'available') {
+                        groups[n.platform].count++;
+                    }
+                });
+
+                body.innerHTML = Object.values(groups).map(g => `
+                    <tr class="border-b border-white/5 hover:bg-white/5 transition-all">
+                        <td class="py-4 font-bold text-white">${g.count} / ${g.total}</td>
+                        <td class="py-4 font-medium text-gray-400 capitalize">${g.platform}</td>
+                        <td class="py-4">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${g.count > 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}">
+                                ${g.count > 0 ? 'ACTIVE' : 'INACTIVE'}
+                            </span>
+                        </td>
+                    </tr>
+                `).join('');
                 await loadPoolSummary();
             } catch (e) {
                 console.error('Error fetching numbers:', e);
@@ -11686,6 +11716,52 @@
                     }).join('');
                 }
             } catch (e) { console.error('Summary error:', e); }
+        }
+
+        async function openLiveSessionsModal() {
+            document.getElementById('liveSessionsModal').style.display = 'flex';
+            await loadLiveSessions();
+        }
+
+        async function loadLiveSessions() {
+            try {
+                const res = await fetch('/api/admin/manual-numbers');
+                const data = await res.json();
+                if (!data.success) return;
+
+                const body = document.getElementById('liveSessionsBody');
+                if (!body) return;
+
+                if (data.numbers.length === 0) {
+                    body.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-gray-500">No manual numbers added yet</td></tr>';
+                    return;
+                }
+
+                body.innerHTML = data.numbers.map(n => `
+                    <tr class="border-b border-white/5 hover:bg-white/5 transition-all">
+                        <td class="py-4 font-bold text-white">${n.number}</td>
+                        <td class="py-4 font-medium text-gray-400 capitalize">${n.platform}</td>
+                        <td class="py-4">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${n.status === 'available' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}">
+                                ${n.status.toUpperCase()}
+                            </span>
+                        </td>
+                        <td class="py-4">
+                            <div class="flex items-center gap-2">
+                                <span class="font-mono text-orange-400 font-bold">${n.otp || '---'}</span>
+                                <button onclick="openOtpModal('${n.id}')" class="text-xs text-blue-400 hover:underline">Edit</button>
+                            </div>
+                        </td>
+                        <td class="py-4 text-right">
+                            <button onclick="deleteManualNumber('${n.id}'); setTimeout(loadLiveSessions, 500);" class="w-8 h-8 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all flex items-center justify-center ml-auto">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                console.error('Error fetching live sessions:', e);
+            }
         }
 
         function openAddNumberModal() {
