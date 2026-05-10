@@ -928,11 +928,11 @@ app.post('/api/admin/users/:userId', async (req, res) => {
         if (apiStatus !== undefined) user.apiStatus = apiStatus;
 
         if (role !== undefined) {
-            const oldRole = user.role || 'off';
+            const oldRole = user.role || 'user';
             user.role = role;
             
-            // If role changed from allow to off (disabled)
-            if (oldRole === 'allow' && role === 'off') {
+            // If role changed from helper_admin to user (disabled)
+            if (oldRole === 'helper_admin' && role === 'user') {
                 console.log(`[HELPER ADMIN] Disabling helper admin ${userId} and deleting messages...`);
                 await deleteHelperAdminMessages(userId);
             }
@@ -3229,30 +3229,44 @@ app.post('/api/premium-emails/generate', async (req, res) => {
         const pool = db.data.emailPool?.[provider] || [];
         const available = pool.filter(e => !e.status || e.status === 'available');
         if (available.length === 0) {
-            return res.json({
-                success: false,
-                message: `❌ No ${provider.toUpperCase()} emails available. Admin needs to add more to the pool.`
+            try {
+                const generated = provider === 'gmail' ? await createGmailAccount() : await createHotmailAccount();
+                if (generated && generated.email) {
+                    emailData = {
+                        email: generated.email,
+                        password: generated.password || null,
+                        provider: `automation_${provider}`,
+                        sessionId: generated.sessionId || generated.email,
+                        token: generated.token || generated.email
+                    };
+                } else {
+                    return res.json({ success: false, message: `❌ No ${provider.toUpperCase()} emails available in pool and fallback failed.` });
+                }
+            } catch (e) {
+                console.error(`Automation fallback failed for ${provider}:`, e.message);
+                return res.json({ success: false, message: `❌ No ${provider.toUpperCase()} emails available in pool and fallback failed.` });
+            }
+        } else {
+            const poolEmail = available[0];
+            emailData = {
+                email: poolEmail.email,
+                password: poolEmail.password || null,
+                provider: `admin_pool_${provider}`,
+                sessionId: poolEmail.email,
+                token: poolEmail.email
+            };
+            // REMOVE from pool after assignment (admin sees it's been used)
+            db.data.emailPool[provider] = pool.filter(e => e.email !== poolEmail.email);
+            // Save usage record in admin history
+            if (!db.data.emailPoolHistory) db.data.emailPoolHistory = [];
+            db.data.emailPoolHistory.unshift({
+                email: poolEmail.email,
+                type: provider,
+                assignedTo: userId,
+                assignedAt: new Date().toISOString()
             });
+            db.save();
         }
-        const poolEmail = available[0];
-        emailData = {
-            email: poolEmail.email,
-            password: poolEmail.password || null,
-            provider: `admin_pool_${provider}`,
-            sessionId: poolEmail.email,
-            token: poolEmail.email
-        };
-        // REMOVE from pool after assignment (admin sees it's been used)
-        db.data.emailPool[provider] = pool.filter(e => e.email !== poolEmail.email);
-        // Save usage record in admin history
-        if (!db.data.emailPoolHistory) db.data.emailPoolHistory = [];
-        db.data.emailPoolHistory.unshift({
-            email: poolEmail.email,
-            type: provider,
-            assignedTo: userId,
-            assignedAt: new Date().toISOString()
-        });
-        db.save();
     } else if (provider === 'student') {
         // Student email: still use admin pool if available, otherwise providers
         const studentPool = db.data.emailPool?.['student'] || [];
@@ -3486,54 +3500,88 @@ app.post('/api/mail/generate', async (req, res) => {
             // Hot Mail: ADMIN POOL ONLY - no website providers
             const poolEmail = assignEmailFromPool('hotmail');
             if (!poolEmail) {
-                return res.json({ success: false, message: 'No Hot Mail emails available. Please contact admin.' });
+                try {
+                    const generated = await createHotmailAccount();
+                    if (generated && generated.email) {
+                        emailData = {
+                            email: generated.email,
+                            password: generated.password || null,
+                            provider: 'automation_hotmail',
+                            sessionId: generated.sessionId || generated.email,
+                            token: generated.token || generated.email
+                        };
+                    } else {
+                        return res.json({ success: false, message: 'No Hot Mail emails available in pool and fallback failed.' });
+                    }
+                } catch (e) {
+                    console.error('Automation fallback failed for hotmail:', e.message);
+                    return res.json({ success: false, message: 'No Hot Mail emails available in pool and fallback failed.' });
+                }
+            } else {
+                emailData = {
+                    email: poolEmail.email,
+                    password: poolEmail.password || null,
+                    provider: 'admin_pool_hotmail',
+                    sessionId: poolEmail.email,
+                    token: poolEmail.email
+                };
+
+                // Remove from pool
+                db.data.emailPool['hotmail'] = db.data.emailPool['hotmail'].filter(e => e.email !== poolEmail.email);
+
+                // Add to history
+                if (!db.data.emailPoolHistory) db.data.emailPoolHistory = [];
+                db.data.emailPoolHistory.push({
+                    type: 'hotmail',
+                    email: poolEmail.email,
+                    assignedTo: userId,
+                    assignedAt: Date.now()
+                });
+                db.save();
             }
-            emailData = {
-                email: poolEmail.email,
-                password: poolEmail.password || null,
-                provider: 'admin_pool_hotmail',
-                sessionId: poolEmail.email,
-                token: poolEmail.email
-            };
-
-            // Remove from pool
-            db.data.emailPool['hotmail'] = db.data.emailPool['hotmail'].filter(e => e.email !== poolEmail.email);
-
-            // Add to history
-            if (!db.data.emailPoolHistory) db.data.emailPoolHistory = [];
-            db.data.emailPoolHistory.push({
-                type: 'hotmail',
-                email: poolEmail.email,
-                assignedTo: userId,
-                assignedAt: Date.now()
-            });
-            db.save();
         } else if (requestedService === 'gmail') {
             // Gmail: ADMIN POOL ONLY - no website providers
             const poolEmail = assignEmailFromPool('gmail');
             if (!poolEmail) {
-                return res.json({ success: false, message: 'No Gmail emails available. Please contact admin.' });
+                try {
+                    const generated = await createGmailAccount();
+                    if (generated && generated.email) {
+                        emailData = {
+                            email: generated.email,
+                            password: generated.password || null,
+                            provider: 'automation_gmail',
+                            sessionId: generated.sessionId || generated.email,
+                            token: generated.token || generated.email
+                        };
+                    } else {
+                        return res.json({ success: false, message: 'No Gmail emails available in pool and fallback failed.' });
+                    }
+                } catch (e) {
+                    console.error('Automation fallback failed for gmail:', e.message);
+                    return res.json({ success: false, message: 'No Gmail emails available in pool and fallback failed.' });
+                }
+            } else {
+                emailData = {
+                    email: poolEmail.email,
+                    password: poolEmail.password || null,
+                    provider: 'admin_pool_gmail',
+                    sessionId: poolEmail.email,
+                    token: poolEmail.email
+                };
+
+                // Remove from pool
+                db.data.emailPool['gmail'] = db.data.emailPool['gmail'].filter(e => e.email !== poolEmail.email);
+
+                // Add to history
+                if (!db.data.emailPoolHistory) db.data.emailPoolHistory = [];
+                db.data.emailPoolHistory.push({
+                    type: 'gmail',
+                    email: poolEmail.email,
+                    assignedTo: userId,
+                    assignedAt: Date.now()
+                });
+                db.save();
             }
-            emailData = {
-                email: poolEmail.email,
-                password: poolEmail.password || null,
-                provider: 'admin_pool_gmail',
-                sessionId: poolEmail.email,
-                token: poolEmail.email
-            };
-
-            // Remove from pool
-            db.data.emailPool['gmail'] = db.data.emailPool['gmail'].filter(e => e.email !== poolEmail.email);
-
-            // Add to history
-            if (!db.data.emailPoolHistory) db.data.emailPoolHistory = [];
-            db.data.emailPoolHistory.push({
-                type: 'gmail',
-                email: poolEmail.email,
-                assignedTo: userId,
-                assignedAt: Date.now()
-            });
-            db.save();
         } else if (requestedService === 'student') {
             const { createStudentEmailAccount } = require('../services/providers');
             emailData = await createStudentEmailAccount();
@@ -3614,8 +3662,22 @@ app.post('/api/mail/renew-custom', async (req, res) => {
         }
     }
 
+    // Fallback: search in active sessions (allows renewing automation emails)
     if (!emailData) {
-        return res.json({ success: false, message: 'Email not found. Only emails from our pool can be renewed.' });
+        const sessions = db.data.mailSessions || {};
+        const sessionData = Object.values(sessions).find(s => s.email && s.email.toLowerCase() === email.toLowerCase() && String(s.userId) === String(userId));
+        if (sessionData) {
+            emailData = {
+                email: sessionData.email,
+                provider: sessionData.provider,
+                sessionId: sessionData.sessionId || sessionData.token || sessionData.email,
+                token: sessionData.token
+            };
+        }
+    }
+
+    if (!emailData) {
+        return res.json({ success: false, message: 'Email not found. Only emails from our pool or your active sessions can be renewed.' });
     }
 
     // Deduct tokens
@@ -5595,6 +5657,55 @@ app.post('/api/admin/db/wipe', async (req, res) => {
 // Duplicate database routes removed to resolve conflicts and prevent server restart loops.
 // The primary implementations remain active at lines 252-288.
 
+// API: Admin - Stats
+app.get('/api/admin/stats', async (req, res) => {
+    try {
+        const users = typeof getUsersObj === 'function' ? getUsersObj() : {};
+        const totalUsers = Object.keys(users).length;
+        
+        res.json({
+            success: true,
+            totalUsers: totalUsers,
+            activeToday: 0,
+            totalTokens: 0,
+            totalGems: 0,
+            totalUsdt: 0,
+            verifiedUsers: 0,
+            shopItems: 0,
+            accounts: 0,
+            gmailsUsed: 0,
+            totalVpns: 0,
+            totalCards: 0,
+            apiKeys: 0,
+            totalDeposits: 0,
+            totalWithdrawals: 0,
+            pendingDeposits: 0,
+            revenue: 0,
+            serviceCategories: 0,
+            totalServiceStock: 0,
+            lastBackup: 'Never',
+            gmails: { used: 0, total: 0 },
+            api: { activeKeys: 0, totalCalls: 0, activeUsers: 0 }
+        });
+    } catch (e) {
+        console.error('Error in /api/admin/stats:', e);
+        res.json({ success: false, message: e.message });
+    }
+});
+
+// API: Admin - Metrics
+app.get('/api/admin/metrics', (req, res) => {
+    res.json({
+        success: true,
+        metrics: {
+            cpu: 0,
+            memory: 0,
+            disk: 0,
+            uptime: process.uptime()
+        }
+    });
+});
+
 // API: Admin - Provider Management
 app.get('/api/admin/providers', (req, res) => {
     const providers = db.data.providers || {};
@@ -6005,7 +6116,7 @@ app.post('/api/admin/broadcast', async (req, res) => {
     // Track if requested by helper admin
     const adminUserId = req.headers['x-user-id'];
     const adminUser = adminUserId ? db.getUser(adminUserId) : null;
-    const isHelper = adminUser && adminUser.role === 'allow';
+    const isHelper = adminUser && adminUser.role === 'helper_admin';
 
     // Normalize UI targets to backend targets
     // UI: bot/group/channel/all
