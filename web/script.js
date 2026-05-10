@@ -5291,10 +5291,13 @@ function loadNumPlatforms() {
                 data.platforms.forEach((p, idx) => {
                     // Most popular (first item) gets selected by default if nothing selected
                     const isActive = idx === 0;
-                    if (isActive && !selectedNumPlatform) {
-                        selectedNumPlatform = p.id;
-                        // Update the selected service display
-                        updateSelectedService(p.id, p.name, p.icon, p.color);
+                    if (isActive) {
+                        if (!selectedNumPlatform) {
+                            selectedNumPlatform = p.id;
+                            updateSelectedService(p.id, p.name, p.icon, p.color);
+                        }
+                        // Update country dropdown for the default selected platform
+                        setTimeout(() => updateCountryDropdown(p.availableCountries), 100);
                     }
 
                     const btn = document.createElement('button');
@@ -5303,12 +5306,13 @@ function loadNumPlatforms() {
                         e.stopPropagation();
                         selectNumPlatform(btn, p.id);
                         updateSelectedService(p.id, p.name, p.icon, p.color);
+                        updateCountryDropdown(p.availableCountries);
                     };
                     btn.style.cssText = `background:${isActive ? 'rgba(147,51,234,0.15)' : 'var(--accent-bg)'}; border:2px solid ${isActive ? '#9333ea' : 'var(--border-color)'}; border-radius:12px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; position:relative; transition:all 0.2s;`;
 
-                    // Add "POPULAR" badge for first platform (most popular)
+                    // Add "POPULAR" badge for platforms marked as popular
                     let badge = '';
-                    if (idx === 0) {
+                    if (p.isPopular) {
                         badge = `<div style="position:absolute; top:-6px; right:-6px; background:#9333ea; color:#fff; font-size:8px; padding:2px 6px; border-radius:10px; font-weight:900;">🔥 POPULAR</div>`;
                     }
 
@@ -5323,6 +5327,39 @@ function loadNumPlatforms() {
                 });
             }
         }).catch(err => console.error('Error loading platforms:', err));
+}
+
+function updateCountryDropdown(availableCountries) {
+    const select = document.getElementById('numCountrySelect');
+    if (!select) return;
+
+    // Read full list from existing options first to preserve names and flags
+    if (!window._fullCountryOptions) {
+        window._fullCountryOptions = Array.from(select.options).map(opt => ({
+            value: opt.value,
+            text: opt.text
+        }));
+    }
+
+    select.innerHTML = '';
+    let added = 0;
+    window._fullCountryOptions.forEach(opt => {
+        if (availableCountries && availableCountries.includes(opt.value)) {
+            const newOpt = document.createElement('option');
+            newOpt.value = opt.value;
+            newOpt.text = opt.text;
+            select.appendChild(newOpt);
+            added++;
+        }
+    });
+
+    // If no countries available, show a placeholder
+    if (added === 0) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.text = 'No countries available';
+        select.appendChild(opt);
+    }
 }
 
 function selectNumPlatform(el, platform) {

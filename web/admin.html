@@ -7828,6 +7828,7 @@
 
         // Select category and show its items
         function selectCategory(categoryId) {
+            window.currentManageCategory = categoryId;
             // Update tab styles
             document.querySelectorAll('.category-tab').forEach(tab => {
                 if (tab.dataset.category === categoryId) {
@@ -11697,6 +11698,9 @@
                                                         <span class="text-[10px] text-orange-400 font-bold">${info.total} Available Numbers</span>
                                                     </div>
                                                     <div class="flex gap-2">
+                                                        <button onclick="togglePopularPlatform('${platform}')" class="w-8 h-8 ${info.isPopular ? 'bg-yellow-500/20 text-yellow-400' : 'bg-white/5 text-gray-400'} border border-white/5 rounded-lg flex items-center justify-center hover:bg-yellow-500/20 transition-colors" title="Toggle Popular">
+                                                            <i class="fas fa-fire text-xs"></i>
+                                                        </button>
                                                         <button onclick="editPoolGroup('${platform}')" class="w-8 h-8 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center justify-center text-blue-400 hover:bg-blue-500/20 transition-colors" title="Add numbers">
                                                             <i class="fas fa-plus text-xs"></i>
                                                         </button>
@@ -11716,6 +11720,22 @@
                     }).join('');
                 }
             } catch (e) { console.error('Summary error:', e); }
+        }
+
+        async function togglePopularPlatform(platform) {
+            try {
+                const res = await fetch('/api/admin/platforms/toggle-popular', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ platform })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    loadPoolSummary(); // Reload to update button color
+                }
+            } catch (e) {
+                console.error('Error toggling popular platform:', e);
+            }
         }
 
         async function openLiveSessionsModal() {
@@ -12501,7 +12521,7 @@
             if (pageId === 'broadcast') loadBroadcast();
             if (pageId === 'groups') loadGroupSettings();
             if (pageId === 'shopmanage') loadShopManage();
-            if (pageId === 'services') loadServices();
+            if (pageId === 'services') loadServiceItems();
             if (pageId === 'database') loadDatabaseManagement();
             if (pageId === 'cards') loadCards();
             

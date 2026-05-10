@@ -2731,8 +2731,11 @@ app.get('/api/number/platforms', (req, res) => {
     // Build platforms array with usage stats
     const platforms = Array.from(platformSet).map(id => {
         let availableCount = 0;
+        let availableCountries = [];
         if (db.data.manualNumbers) {
-            availableCount = db.data.manualNumbers.filter(n => n.platform === id && n.status === 'available').length;
+            const availableForPlatform = db.data.manualNumbers.filter(n => n.platform === id && n.status === 'available');
+            availableCount = availableForPlatform.length;
+            availableCountries = [...new Set(availableForPlatform.map(n => n.countryCode))];
         }
 
         return {
@@ -2742,12 +2745,18 @@ app.get('/api/number/platforms', (req, res) => {
             color: platformMeta[id]?.color || '#f59e0b',
             usage: stats[id] || 0,
             availableCount: availableCount,
+            availableCountries: availableCountries,
+            isPopular: (db.data.popularPlatforms || []).includes(id),
             countryCodes: platformCountryCodes[id] || ['1'] // Default to US
         };
-    });
+    }).filter(p => p.availableCount > 0); // Only show platforms with available numbers
 
-    // Sort by usage (popularity) - descending
-    platforms.sort((a, b) => b.usage - a.usage);
+    // Sort by isPopular first, then by usage
+    platforms.sort((a, b) => {
+        if (a.isPopular && !b.isPopular) return -1;
+        if (!a.isPopular && b.isPopular) return 1;
+        return b.usage - a.usage;
+    });
 
     res.json({
         success: true,
@@ -2828,40 +2837,9 @@ app.post('/api/number/generate', async (req, res) => {
         }
     }
 
-    // If no manual number, try real SMS provider via bot's apiGateway
+    // If no manual number, return error immediately (rely strictly on manual pool as requested)
     if (!number) {
-        try {
-            // Get country code for this platform from provider settings
-            let countryCode = req.body.countryCode || '1'; // Use user's selected country code
-            const providers = db.data.providers || {};
-            const smsProviders = Object.values(providers).filter(p => p.type === 'sms' && p.status === 'active');
-
-            for (const provider of smsProviders) {
-                if (provider.platforms && provider.platforms[platform] && provider.platforms[platform].length > 0) {
-                    countryCode = provider.platforms[platform][0];
-                    break;
-                }
-            }
-
-            const apiGateway = require('../services/api-gateway');
-            const result = await apiGateway.executeWithFailover('sms', async (provider) => {
-                const axios = require('axios');
-                const r = await axios.post(`${provider.apiUrl}/numbers`, {
-                    platform: platform.toLowerCase(),
-                    countryCode
-                }, {
-                    headers: { 'X-API-KEY': provider.apiKey }, timeout: 8000
-                });
-                return r.data;
-            });
-            if (result && result.number) number = result.number;
-        } catch (e) {
-            if (e.message !== 'SERVICE_UNAVAILABLE') {
-                console.error('[NUMBER] API error:', e.message);
-            } else {
-                console.warn(`[NUMBER] Service unavailable for ${platform}: No online providers found.`);
-            }
-        }
+        return res.json({ success: false, message: 'No numbers available for this platform/country in the pool.' });
     }
 
     if (!number) {
@@ -5889,7 +5867,14 @@ app.get('/api/admin/manual-numbers/summary', (req, res) => {
     list.forEach(n => {
         if (n.status === 'available') {
             const key = n.platform;
-            if (!summary[key]) summary[key] = { total: 0, countries: {}, hasOtpApi: false };
+            if (!summary[key]) {
+                summary[key] = { 
+                    total: 0, 
+                    countries: {}, 
+                    hasOtpApi: false,
+                    isPopular: (db.data.popularPlatforms || []).includes(key)
+                };
+            }
             summary[key].total++;
             summary[key].countries[n.countryCode] = (summary[key].countries[n.countryCode] || 0) + 1;
             if (n.otpApi) summary[key].hasOtpApi = true;
@@ -5897,6 +5882,22 @@ app.get('/api/admin/manual-numbers/summary', (req, res) => {
     });
 
     res.json({ success: true, summary });
+});
+
+app.post('/api/admin/platforms/toggle-popular', (req, res) => {
+    const { platform } = req.body;
+    if (!platform) return res.json({ success: false, message: 'Platform required' });
+
+    if (!db.data.popularPlatforms) db.data.popularPlatforms = [];
+
+    const index = db.data.popularPlatforms.indexOf(platform.toLowerCase());
+    if (index === -1) {
+        db.data.popularPlatforms.push(platform.toLowerCase());
+    } else {
+        db.data.popularPlatforms.splice(index, 1);
+    }
+
+    res.json({ success: true, isPopular: index === -1 });
 });
 
 app.get('/api/admin/manual-numbers', (req, res) => {
